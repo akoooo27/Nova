@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/aspire/">
+    <Project Path="Nova.AppHost/Nova.AppHost.csproj" />
+    <Project Path="Nova.ServiceDefaults/Nova.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/src/services/">
+    <Project Path="src/services/Gateway.Api/Gateway.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/shared/">
+    <Project Path="src/shared/Shared.Api/Shared.Api.csproj" />
+    <Project Path="src/shared/Shared.Application/Shared.Application.csproj" />
+    <Project Path="src/shared/Shared.Infrastructure/Shared.Infrastructure.csproj" />
+    <Project Path="src/shared/SharedKernel/SharedKernel.csproj" />
+  </Folder>
+</Solution>
