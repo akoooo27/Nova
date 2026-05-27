@@ -31,6 +31,9 @@
     <PackageVersion Include="MassTransit.Abstractions" Version="8.4.1" />
     
     <!-- Api -->
+    <PackageVersion Include="Duende.BFF" Version="4.1.2" />
+    <PackageVersion Include="Duende.BFF.Yarp" Version="4.1.2" />
+    
     <PackageVersion Include="FastEndpoints" Version="8.1.0" />
   </ItemGroup>
 </Project>

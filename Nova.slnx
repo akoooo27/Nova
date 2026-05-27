@@ -5,7 +5,7 @@
     <Project Path="Nova.ServiceDefaults/Nova.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/src/services/">
-    <Project Path="src/services/Gateway.Api/Gateway.Api.csproj" />
+    <Project Path="src/services/BFF/BFF.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src/shared/Shared.Api/Shared.Api.csproj" />
