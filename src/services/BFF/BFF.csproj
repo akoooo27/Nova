@@ -7,7 +7,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      
       <PackageReference Include="Duende.BFF" />
+      <PackageReference Include="Duende.BFF.EntityFramework" />
       <PackageReference Include="Duende.BFF.Yarp" />
     </ItemGroup>
 

@@ -1,5 +1,9 @@
+using BFF.Database;
+
 using Duende.Bff;
+using Duende.Bff.Builder;
 using Duende.Bff.DynamicFrontends;
+using Duende.Bff.EntityFramework;
 using Duende.Bff.Yarp;
 
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -11,13 +15,19 @@ using Shared.Infrastructure.Options;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.AddNpgsqlDbContext<BffSessionDbContext>("bff-db");
 
 builder.Services.AddOptions<Auth0Options>()
     .BindConfiguration(Auth0Options.SectionName)
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddBff()
+builder.Services.AddBff(options =>
+    {
+        options.SessionCleanupInterval = TimeSpan.FromMinutes(15);
+    })
+    .AddEntityFrameworkServerSideSessionsServices<BffSessionDbContext, IBffServicesBuilder>()
+    .AddSessionCleanupBackgroundProcess()
     .AddRemoteApis()
     .ConfigureOpenIdConnect(_ => { })
     .ConfigureCookies(options =>
