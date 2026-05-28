@@ -9,6 +9,11 @@ IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgre
 
 IResourceBuilder<PostgresDatabaseResource> bffDb = postgres.AddDatabase("bff-db");
 
+IResourceBuilder<ParameterResource> rabbitMqUser = builder.AddParameter("rabbitmq-user", secret: true);
+IResourceBuilder<ParameterResource> rabbitMqPassword = builder.AddParameter("rabbitmq-password", secret: true);
+
+IResourceBuilder<RabbitMQServerResource> rabbitMq = builder.AddRabbitMQ("rabbitmq", rabbitMqUser, rabbitMqPassword);
+
 IResourceBuilder<ProjectResource> bffMigrations = builder.AddProject<Projects.BFF_MigrationWorker>("bff-migrations")
     .WithReference(bffDb)
     .WaitFor(bffDb);
@@ -25,7 +30,9 @@ builder.AddProject<Projects.BFF>("bff")
     .WithEnvironment("Auth0__ClientId", auth0ClientId)
     .WithEnvironment("Auth0__ClientSecret", auth0ClientSecret)
     .WithReference(bffDb)
+    .WithReference(rabbitMq)
     .WaitFor(bffDb)
+    .WaitFor(rabbitMq)
     .WaitForCompletion(bffMigrations);
 
 await builder.Build().RunAsync();
