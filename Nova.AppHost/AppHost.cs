@@ -8,6 +8,7 @@ IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgre
     .WithDataVolume();
 
 IResourceBuilder<PostgresDatabaseResource> bffDb = postgres.AddDatabase("bff-db");
+IResourceBuilder<PostgresDatabaseResource> identityIngressDb = postgres.AddDatabase("identity-ingress-db");
 
 IResourceBuilder<ParameterResource> rabbitMqUser = builder.AddParameter("rabbitmq-user", secret: true);
 IResourceBuilder<ParameterResource> rabbitMqPassword = builder.AddParameter("rabbitmq-password", secret: true);
@@ -18,12 +19,18 @@ IResourceBuilder<ProjectResource> bffMigrations = builder.AddProject<Projects.BF
     .WithReference(bffDb)
     .WaitFor(bffDb);
 
+IResourceBuilder<ProjectResource> identityIngressMigrations = builder
+    .AddProject<Projects.IdentityIngress_MigrationWorker>("identity-ingress-migrations")
+    .WithReference(identityIngressDb)
+    .WaitFor(identityIngressDb);
+
 IResourceBuilder<ParameterResource> auth0Domain = builder.AddParameter("auth0-domain", secret: true);
 IResourceBuilder<ParameterResource> auth0Audience = builder.AddParameter("auth0-audience", secret: true);
 IResourceBuilder<ParameterResource> auth0ClientId = builder.AddParameter("auth0-client-id", secret: true);
 IResourceBuilder<ParameterResource> auth0ClientSecret = builder.AddParameter("auth0-client-secret", secret: true);
 
 builder.AddProject<Projects.BFF>("bff")
+    .WithHttpEndpoint(port: 7000, name: "http")
     .WithHttpsEndpoint(port: 7001, name: "https")
     .WithEnvironment("Auth0__Domain", auth0Domain)
     .WithEnvironment("Auth0__Audience", auth0Audience)
@@ -34,5 +41,14 @@ builder.AddProject<Projects.BFF>("bff")
     .WaitFor(bffDb)
     .WaitFor(rabbitMq)
     .WaitForCompletion(bffMigrations);
+
+builder.AddProject<Projects.IdentityIngress>("identity-ingress")
+    .WithHttpEndpoint(port: 7100, name: "http")
+    .WithHttpsEndpoint(port: 7101, name: "https")
+    .WithReference(identityIngressDb)
+    .WithReference(rabbitMq)
+    .WaitFor(identityIngressDb)
+    .WaitFor(rabbitMq)
+    .WaitForCompletion(identityIngressMigrations);
 
 await builder.Build().RunAsync();

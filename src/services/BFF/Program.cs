@@ -14,8 +14,22 @@ using Shared.Infrastructure.Options;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+const string SpaCorsPolicy = "SpaCorsPolicy";
+
 builder.AddServiceDefaults();
 builder.AddNpgsqlDbContext<BffSessionDbContext>("bff-db");
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(SpaCorsPolicy, policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 builder.Services.AddOptions<Auth0Options>()
     .BindConfiguration(Auth0Options.SectionName)
@@ -82,6 +96,7 @@ app.MapDefaultEndpoints();
 
 app.UseHttpsRedirection();
 
+app.UseCors(SpaCorsPolicy);
 app.UseAuthentication();
 app.UseBff();
 app.UseAuthorization();

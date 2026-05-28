@@ -6,9 +6,11 @@
   </Folder>
   <Folder Name="/src/services/">
     <Project Path="src/services/BFF/BFF.csproj" />
+    <Project Path="src/services/IdentityIngress/IdentityIngress.csproj" />
   </Folder>
   <Folder Name="/src/workers/">
     <Project Path="src/workers/BFF.MigrationWorker/BFF.MigrationWorker.csproj" />
+    <Project Path="src/workers/IdentityIngress.MigrationWorker/IdentityIngress.MigrationWorker.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src/shared/Shared.Api/Shared.Api.csproj" />
