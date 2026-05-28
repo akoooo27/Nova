@@ -1,4 +1,5 @@
 using FastEndpoints;
+using FastEndpoints.Swagger;
 
 using IdentityIngress.Database;
 
@@ -21,8 +22,9 @@ internal static class DependencyInjection
         services
             .AddSharedInfra()
             .AddMassTransitInternal()
-            .AddSharedApi()
-            .AddFastEndpoints();
+            .AddSharedApi();
+
+        services.AddFastEndpointsInternal();
 
         return services;
     }
@@ -63,5 +65,27 @@ internal static class DependencyInjection
         });
 
         return services;
+    }
+
+    private static void AddFastEndpointsInternal(this IServiceCollection services)
+    {
+        services.AddFastEndpoints(options =>
+        {
+            options.Assemblies =
+            [
+                typeof(DependencyInjection).Assembly
+            ];
+        });
+
+        services.SwaggerDocument(options =>
+        {
+            options.MaxEndpointVersion = 1;
+            options.DocumentSettings = settings =>
+            {
+                settings.Title = "Identity Ingress API";
+                settings.Description = "Identity provider ingress anti-corruption API.";
+                settings.Version = "v1";
+            };
+        });
     }
 }
