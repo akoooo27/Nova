@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\services\BFF\BFF.csproj" />
+    <ProjectReference Include="..\src\workers\BFF.MigrationWorker\BFF.MigrationWorker.csproj" />
   </ItemGroup>
 
 </Project>

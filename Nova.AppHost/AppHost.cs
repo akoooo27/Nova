@@ -4,9 +4,14 @@ IResourceBuilder<ParameterResource> postgresUser = builder.AddParameter("postgre
 IResourceBuilder<ParameterResource> postgresPassword = builder.AddParameter("postgres-password", secret: true);
 
 IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgres", postgresUser, postgresPassword)
+    .WithHostPort(5432)
     .WithDataVolume();
 
 IResourceBuilder<PostgresDatabaseResource> bffDb = postgres.AddDatabase("bff-db");
+
+IResourceBuilder<ProjectResource> bffMigrations = builder.AddProject<Projects.BFF_MigrationWorker>("bff-migrations")
+    .WithReference(bffDb)
+    .WaitFor(bffDb);
 
 IResourceBuilder<ParameterResource> auth0Domain = builder.AddParameter("auth0-domain", secret: true);
 IResourceBuilder<ParameterResource> auth0Audience = builder.AddParameter("auth0-audience", secret: true);
@@ -20,6 +25,7 @@ builder.AddProject<Projects.BFF>("bff")
     .WithEnvironment("Auth0__ClientId", auth0ClientId)
     .WithEnvironment("Auth0__ClientSecret", auth0ClientSecret)
     .WithReference(bffDb)
-    .WaitFor(bffDb);
+    .WaitFor(bffDb)
+    .WaitForCompletion(bffMigrations);
 
 await builder.Build().RunAsync();

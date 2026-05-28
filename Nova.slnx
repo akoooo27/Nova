@@ -7,6 +7,9 @@
   <Folder Name="/src/services/">
     <Project Path="src/services/BFF/BFF.csproj" />
   </Folder>
+  <Folder Name="/src/workers/">
+    <Project Path="src/workers/BFF.MigrationWorker/BFF.MigrationWorker.csproj" />
+  </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src/shared/Shared.Api/Shared.Api.csproj" />
     <Project Path="src/shared/Shared.Application/Shared.Application.csproj" />
