@@ -1,3 +1,5 @@
+using Aspire.Hosting.DevTunnels;
+
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
 IResourceBuilder<ParameterResource> postgresUser = builder.AddParameter("postgres-user", secret: true);
@@ -51,7 +53,13 @@ IResourceBuilder<ProjectResource> identityIngress = builder.AddProject<Projects.
     .WaitFor(rabbitMq)
     .WaitForCompletion(identityIngressMigrations);
 
-builder.AddDevTunnel("identity-ingress-dev-tunnel")
+builder.AddDevTunnel(
+    name: "identity-ingress-dev-tunnel",
+    tunnelId: "nova-identity-ingress",
+    options: new DevTunnelOptions
+    {
+        Description = "Nova identity ingress tunnel for Auth0 Actions"
+    })
     .WithReference(identityIngress.GetEndpoint("https"), allowAnonymous: true);
 
 await builder.Build().RunAsync();

@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\..\Nova.ServiceDefaults\Nova.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\shared\Shared.Api\Shared.Api.csproj" />
     <ProjectReference Include="..\..\shared\Shared.Application\Shared.Application.csproj" />
+    <ProjectReference Include="..\..\shared\Shared.Contracts\Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\shared\Shared.Infrastructure\Shared.Infrastructure.csproj" />
   </ItemGroup>
 

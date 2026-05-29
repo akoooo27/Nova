@@ -15,6 +15,7 @@
   <Folder Name="/src/shared/">
     <Project Path="src/shared/Shared.Api/Shared.Api.csproj" />
     <Project Path="src/shared/Shared.Application/Shared.Application.csproj" />
+    <Project Path="src/shared/Shared.Contracts/Shared.Contracts.csproj" />
     <Project Path="src/shared/Shared.Infrastructure/Shared.Infrastructure.csproj" />
     <Project Path="src/shared/SharedKernel/SharedKernel.csproj" />
   </Folder>
