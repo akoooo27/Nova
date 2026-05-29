@@ -42,7 +42,7 @@ builder.AddProject<Projects.BFF>("bff")
     .WaitFor(rabbitMq)
     .WaitForCompletion(bffMigrations);
 
-builder.AddProject<Projects.IdentityIngress>("identity-ingress")
+IResourceBuilder<ProjectResource> identityIngress = builder.AddProject<Projects.IdentityIngress>("identity-ingress")
     .WithHttpEndpoint(port: 7100, name: "http")
     .WithHttpsEndpoint(port: 7101, name: "https")
     .WithReference(identityIngressDb)
@@ -50,5 +50,8 @@ builder.AddProject<Projects.IdentityIngress>("identity-ingress")
     .WaitFor(identityIngressDb)
     .WaitFor(rabbitMq)
     .WaitForCompletion(identityIngressMigrations);
+
+builder.AddDevTunnel("identity-ingress-dev-tunnel")
+    .WithReference(identityIngress.GetEndpoint("https"), allowAnonymous: true);
 
 await builder.Build().RunAsync();
