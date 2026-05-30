@@ -10,10 +10,16 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.DevTunnels" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\services\Gateway.Api\Gateway.Api.csproj" />
+    <ProjectReference Include="..\src\services\BFF\BFF.csproj" />
+    <ProjectReference Include="..\src\services\IdentityIngress\IdentityIngress.csproj" />
+    <ProjectReference Include="..\src\workers\BFF.MigrationWorker\BFF.MigrationWorker.csproj" />
+    <ProjectReference Include="..\src\workers\IdentityIngress.MigrationWorker\IdentityIngress.MigrationWorker.csproj" />
   </ItemGroup>
 
 </Project>

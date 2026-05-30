@@ -20,6 +20,11 @@ public static class DependencyInjection
 
         services.AddScoped<IUserContext, UserContext>();
 
+        return services;
+    }
+
+    public static IServiceCollection AddDomainEventsDispatcher(this IServiceCollection services)
+    {
         services.AddScoped<IDomainEventsDispatcher, DomainEventsDispatcher>();
 
         return services;

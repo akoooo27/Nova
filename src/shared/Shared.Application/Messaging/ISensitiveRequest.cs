@@ -1,4 +1,4 @@
-namespace SharedKernel.Application.Messaging;
+namespace Shared.Application.Messaging;
 
 #pragma warning disable CA1040
 public interface ISensitiveRequest;
