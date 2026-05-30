@@ -1,4 +1,5 @@
 using BFF.Database;
+using BFF.FrontendProxy;
 
 using Duende.Bff;
 using Duende.Bff.Builder;
@@ -14,22 +15,8 @@ using Shared.Infrastructure.Options;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-const string SpaCorsPolicy = "SpaCorsPolicy";
-
 builder.AddServiceDefaults();
 builder.AddNpgsqlDbContext<BffSessionDbContext>("bff-db");
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(SpaCorsPolicy, policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
-});
 
 builder.Services.AddOptions<Auth0Options>()
     .BindConfiguration(Auth0Options.SectionName)
@@ -49,6 +36,16 @@ builder.Services.AddBff(options =>
         options.Cookie.Name = "__Nova-bff";
         options.Cookie.SameSite = SameSiteMode.Strict;
     });
+
+builder.Services
+    .AddReverseProxy()
+    .LoadFromMemory
+    (
+        FrontendProxyConfiguration.CreateRoutes(),
+        FrontendProxyConfiguration.CreateClusters(
+            FrontendProxyConfiguration.GetFrontendAddress(builder.Configuration))
+    )
+    .AddBffExtensions();
 
 builder.Services
     .AddOptions<OpenIdConnectOptions>(BffAuthenticationSchemes.BffOpenIdConnect)
@@ -96,9 +93,11 @@ app.MapDefaultEndpoints();
 
 app.UseHttpsRedirection();
 
-app.UseCors(SpaCorsPolicy);
+app.UseWebSockets();
 app.UseAuthentication();
 app.UseBff();
 app.UseAuthorization();
+
+app.MapReverseProxy();
 
 await app.RunAsync();
