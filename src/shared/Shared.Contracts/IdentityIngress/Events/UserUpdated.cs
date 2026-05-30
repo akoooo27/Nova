@@ -1,6 +1,6 @@
 namespace Shared.Contracts.IdentityIngress.Events;
 
-public sealed class UserRegistered
+public sealed class UserUpdated
 {
     public required string EventId { get; init; }
 

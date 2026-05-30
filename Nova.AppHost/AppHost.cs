@@ -15,7 +15,8 @@ IResourceBuilder<PostgresDatabaseResource> identityIngressDb = postgres.AddDatab
 IResourceBuilder<ParameterResource> rabbitMqUser = builder.AddParameter("rabbitmq-user", secret: true);
 IResourceBuilder<ParameterResource> rabbitMqPassword = builder.AddParameter("rabbitmq-password", secret: true);
 
-IResourceBuilder<RabbitMQServerResource> rabbitMq = builder.AddRabbitMQ("rabbitmq", rabbitMqUser, rabbitMqPassword);
+IResourceBuilder<RabbitMQServerResource> rabbitMq = builder.AddRabbitMQ("rabbitmq", rabbitMqUser, rabbitMqPassword)
+    .WithManagementPlugin();
 
 IResourceBuilder<ProjectResource> bffMigrations = builder.AddProject<Projects.BFF_MigrationWorker>("bff-migrations")
     .WithReference(bffDb)
@@ -30,6 +31,8 @@ IResourceBuilder<ParameterResource> auth0Domain = builder.AddParameter("auth0-do
 IResourceBuilder<ParameterResource> auth0Audience = builder.AddParameter("auth0-audience", secret: true);
 IResourceBuilder<ParameterResource> auth0ClientId = builder.AddParameter("auth0-client-id", secret: true);
 IResourceBuilder<ParameterResource> auth0ClientSecret = builder.AddParameter("auth0-client-secret", secret: true);
+IResourceBuilder<ParameterResource> auth0EventsWebhookToken =
+    builder.AddParameter("auth0-events-webhook-token", secret: true);
 
 builder.AddProject<Projects.BFF>("bff")
     .WithHttpEndpoint(port: 7000, name: "http")
@@ -47,6 +50,7 @@ builder.AddProject<Projects.BFF>("bff")
 IResourceBuilder<ProjectResource> identityIngress = builder.AddProject<Projects.IdentityIngress>("identity-ingress")
     .WithHttpEndpoint(port: 7100, name: "http")
     .WithHttpsEndpoint(port: 7101, name: "https")
+    .WithEnvironment("Auth0Events__WebhookToken", auth0EventsWebhookToken)
     .WithReference(identityIngressDb)
     .WithReference(rabbitMq)
     .WaitFor(identityIngressDb)
@@ -58,7 +62,7 @@ builder.AddDevTunnel(
     tunnelId: "nova-identity-ingress",
     options: new DevTunnelOptions
     {
-        Description = "Nova identity ingress tunnel for Auth0 Actions"
+        Description = "Nova identity ingress tunnel for Auth0 Event Streams"
     })
     .WithReference(identityIngress.GetEndpoint("https"), allowAnonymous: true);
 

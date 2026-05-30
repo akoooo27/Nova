@@ -1,6 +1,6 @@
 namespace Shared.Contracts.IdentityIngress.Events;
 
-public sealed class UserRegistered
+public sealed class UserDeleted
 {
     public required string EventId { get; init; }
 
@@ -9,10 +9,4 @@ public sealed class UserRegistered
     public required string ProviderUserId { get; init; }
 
     public required DateTimeOffset OccurredAt { get; init; }
-
-    public string? Email { get; init; }
-
-    public bool? EmailVerified { get; init; }
-
-    public string? Name { get; init; }
 }

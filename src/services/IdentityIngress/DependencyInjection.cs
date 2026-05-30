@@ -2,16 +2,17 @@ using FastEndpoints;
 using FastEndpoints.Swagger;
 
 using IdentityIngress.Database;
+using IdentityIngress.Endpoints.Auth0Events;
+using IdentityIngress.IdentityProviders;
+using IdentityIngress.IdentityProviders.Auth0;
+using IdentityIngress.Options;
 
 using MassTransit;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using Shared.Api;
+using Shared.Application.Messaging;
 using Shared.Infrastructure;
 using Shared.Infrastructure.Messaging;
-
-using SharedKernel.Application.Messaging;
 
 namespace IdentityIngress;
 
@@ -24,9 +25,20 @@ internal static class DependencyInjection
             .AddMassTransitInternal()
             .AddSharedApi();
 
+        services.AddIdentityProviderEventIngestion();
         services.AddFastEndpointsInternal();
 
         return services;
+    }
+
+    private static void AddIdentityProviderEventIngestion(this IServiceCollection services)
+    {
+        services.AddOptions<Auth0EventsOptions>()
+            .BindConfiguration(Auth0EventsOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddScoped<IIdentityProviderEventMapper<Request>, Auth0EventMapper>();
     }
 
     private static IServiceCollection AddSharedInfra(this IServiceCollection services)

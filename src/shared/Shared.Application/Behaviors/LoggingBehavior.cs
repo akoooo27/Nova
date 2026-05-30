@@ -6,7 +6,7 @@ using Mediator;
 
 using Microsoft.Extensions.Logging;
 
-using SharedKernel.Application.Messaging;
+using Shared.Application.Messaging;
 
 namespace Shared.Application.Behaviors;
 

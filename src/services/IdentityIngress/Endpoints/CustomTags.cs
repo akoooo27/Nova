@@ -2,5 +2,5 @@ namespace IdentityIngress.Endpoints;
 
 internal static class CustomTags
 {
-    public const string UserRegistrations = "User Registrations";
+    public const string Auth0Events = "Auth0 Events";
 }
