@@ -12,6 +12,9 @@
     <Project Path="src/workers/BFF.MigrationWorker/BFF.MigrationWorker.csproj" />
     <Project Path="src/workers/IdentityIngress.MigrationWorker/IdentityIngress.MigrationWorker.csproj" />
   </Folder>
+  <Folder Name="/src/services/Chat/">
+    <Project Path="src/services/Chat/Chat.Domain/Chat.Domain.csproj" />
+  </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src/shared/Shared.Api/Shared.Api.csproj" />
     <Project Path="src/shared/Shared.Application/Shared.Application.csproj" />
