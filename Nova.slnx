@@ -15,6 +15,9 @@
   <Folder Name="/src/services/Chat/">
     <Project Path="src/services/Chat/Chat.Domain/Chat.Domain.csproj" />
   </Folder>
+  <Folder Name="/tests/Chat/">
+    <Project Path="tests/Chat/Chat.Domain.Tests/Chat.Domain.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src/shared/Shared.Api/Shared.Api.csproj" />
     <Project Path="src/shared/Shared.Application/Shared.Application.csproj" />
