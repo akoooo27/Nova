@@ -1,6 +1,7 @@
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Entities;
 using Chat.Domain.ModelCatalog.ValueObjects;
+using Chat.Domain.Shared;
 
 using ErrorOr;
 
@@ -26,6 +27,7 @@ public sealed class LlmProviderTests
         Assert.Equal(name, provider.Name);
         Assert.Equal(slug, provider.Slug);
         Assert.Equal(sortOrder, provider.SortOrder);
+        Assert.Null(provider.LogoKey);
         Assert.Empty(provider.Models);
     }
 
@@ -200,6 +202,29 @@ public sealed class LlmProviderTests
         provider.UpdateSortOrder(sortOrder);
 
         Assert.Equal(sortOrder, provider.SortOrder);
+    }
+
+    [Fact]
+    public void UpdateLogoKeyReplacesProviderLogoKey()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        AssetKey logoKey = AssetKey.Create("llm-providers/openai.svg").Value;
+
+        provider.UpdateLogoKey(logoKey);
+
+        Assert.Equal(logoKey, provider.LogoKey);
+    }
+
+    [Fact]
+    public void RemoveLogoKeyClearsProviderLogoKey()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        AssetKey logoKey = AssetKey.Create("llm-providers/openai.svg").Value;
+        provider.UpdateLogoKey(logoKey);
+
+        provider.RemoveLogoKey();
+
+        Assert.Null(provider.LogoKey);
     }
 
     private static LlmModel AddModel(LlmProvider provider)

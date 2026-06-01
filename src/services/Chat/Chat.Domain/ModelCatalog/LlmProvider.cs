@@ -1,5 +1,6 @@
 using Chat.Domain.ModelCatalog.Entities;
 using Chat.Domain.ModelCatalog.ValueObjects;
+using Chat.Domain.Shared;
 
 using ErrorOr;
 
@@ -16,6 +17,8 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
     public ProviderSlug Slug { get; private set; }
 
     public SortOrder SortOrder { get; private set; }
+
+    public AssetKey? LogoKey { get; private set; }
 
     public IReadOnlyCollection<LlmModel> Models => _models;
 
@@ -127,6 +130,10 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
     }
 
     public void UpdateSortOrder(SortOrder sortOrder) => SortOrder = sortOrder;
+
+    public void UpdateLogoKey(AssetKey logoKey) => LogoKey = logoKey;
+
+    public void RemoveLogoKey() => LogoKey = null;
 
     private LlmModel? FindModel(LlmModelId modelId) =>
         _models.FirstOrDefault(model => model.Id == modelId);
