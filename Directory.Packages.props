@@ -27,10 +27,12 @@
 
     <!-- Application -->
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
 
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
 
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
 
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
 

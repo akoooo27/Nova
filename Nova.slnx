@@ -13,8 +13,10 @@
     <Project Path="src/workers/IdentityIngress.MigrationWorker/IdentityIngress.MigrationWorker.csproj" />
   </Folder>
   <Folder Name="/src/services/Chat/">
+    <Project Path="src/services/Chat/Chat.Application/Chat.Application.csproj" />
     <Project Path="src/services/Chat/Chat.Domain/Chat.Domain.csproj" />
   </Folder>
+  <Folder Name="/tests/" />
   <Folder Name="/tests/Chat/">
     <Project Path="tests/Chat/Chat.Domain.Tests/Chat.Domain.Tests.csproj" />
   </Folder>
