@@ -9,11 +9,9 @@ using ErrorOr;
 
 using Mediator;
 
-using Microsoft.EntityFrameworkCore;
-
 namespace Chat.Application.ModelCatalog.LlmProviders.Commands.CreateLlmProvider;
 
-internal sealed class CreateLlmProviderHandler(IApplicationDbContext db)
+internal sealed class CreateLlmProviderHandler(ILlmProviderRepository providers, IUnitOfWork unitOfWork)
     : ICommandHandler<CreateLlmProviderCommand, ErrorOr<LlmProviderResult>>
 {
     public async ValueTask<ErrorOr<LlmProviderResult>> Handle(CreateLlmProviderCommand command, CancellationToken cancellationToken)
@@ -48,8 +46,7 @@ internal sealed class CreateLlmProviderHandler(IApplicationDbContext db)
 
         ProviderSlug slug = slugResult.Value;
 
-        bool slugExists = await db.LlmProviders
-            .AnyAsync(x => x.Slug == slug, cancellationToken);
+        bool slugExists = await providers.ExistsBySlugAsync(slug, cancellationToken);
 
         if (slugExists)
         {
@@ -75,8 +72,8 @@ internal sealed class CreateLlmProviderHandler(IApplicationDbContext db)
             provider.UpdateLogoKey(logoKeyResult.Value);
         }
 
-        db.LlmProviders.Add(provider);
-        await db.SaveChangesAsync(cancellationToken);
+        providers.Add(provider);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return provider.ToResult();
     }

@@ -9,11 +9,10 @@ using ErrorOr;
 
 using Mediator;
 
-using Microsoft.EntityFrameworkCore;
-
 namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModel;
 
-internal sealed class UpdateLlmModelHandler(IApplicationDbContext db) : ICommandHandler<UpdateLlmModelCommand, ErrorOr<LlmModelResult>>
+internal sealed class UpdateLlmModelHandler(ILlmProviderRepository providers, IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateLlmModelCommand, ErrorOr<LlmModelResult>>
 {
     public async ValueTask<ErrorOr<LlmModelResult>> Handle(UpdateLlmModelCommand command, CancellationToken cancellationToken)
     {
@@ -66,9 +65,7 @@ internal sealed class UpdateLlmModelHandler(IApplicationDbContext db) : ICommand
             return errors;
         }
 
-        LlmProvider? provider = await db.LlmProviders
-            .Include(x => x.Models)
-            .FirstOrDefaultAsync(x => x.Id == providerIdResult.Value, cancellationToken);
+        LlmProvider? provider = await providers.GetByIdAsync(providerIdResult.Value, cancellationToken);
 
         if (provider is null)
         {
@@ -90,7 +87,7 @@ internal sealed class UpdateLlmModelHandler(IApplicationDbContext db) : ICommand
             return modelRefreshResult.Errors;
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         LlmModel model = modelRefreshResult.Value;
 
