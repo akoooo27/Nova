@@ -18,6 +18,7 @@
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Chat/">
+    <Project Path="tests/Chat/Chat.Application.Tests/Chat.Application.Tests.csproj" />
     <Project Path="tests/Chat/Chat.Domain.Tests/Chat.Domain.Tests.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
