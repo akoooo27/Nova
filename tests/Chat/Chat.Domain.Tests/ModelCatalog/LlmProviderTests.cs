@@ -83,15 +83,16 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
-    public void RefreshModelProfileUpdatesExistingModel()
+    public void RefreshModelProfileUpdatesExistingModelAndReturnsIt()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
         LlmModel model = AddModel(provider);
         LlmModelProfile profile = TestCatalogFactory.CreateProfile("GPT-4.1 mini");
 
-        ErrorOr<Success> result = provider.RefreshModelProfile(model.Id, profile);
+        ErrorOr<LlmModel> result = provider.RefreshModelProfile(model.Id, profile);
 
         Assert.False(result.IsError);
+        Assert.Same(model, result.Value);
         Assert.Equal(profile, model.Profile);
     }
 
@@ -100,7 +101,7 @@ public sealed class LlmProviderTests
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
 
-        ErrorOr<Success> result = provider.RefreshModelProfile
+        ErrorOr<LlmModel> result = provider.RefreshModelProfile
         (
             modelId: LlmModelId.New(),
             profile: TestCatalogFactory.CreateProfile()

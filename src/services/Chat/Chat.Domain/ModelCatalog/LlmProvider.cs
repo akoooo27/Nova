@@ -73,7 +73,7 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         return model;
     }
 
-    public ErrorOr<Success> RefreshModelProfile(LlmModelId modelId, LlmModelProfile profile)
+    public ErrorOr<LlmModel> RefreshModelProfile(LlmModelId modelId, LlmModelProfile profile)
     {
         LlmModel? model = FindModel(modelId);
 
@@ -84,7 +84,7 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
 
         model.UpdateProfile(profile);
 
-        return Result.Success;
+        return model;
     }
 
     public ErrorOr<Success> UpdateModelSortOrder(LlmModelId modelId, SortOrder sortOrder)
