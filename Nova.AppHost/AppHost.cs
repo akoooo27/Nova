@@ -27,6 +27,10 @@ IResourceBuilder<ProjectResource> bffMigrations = builder.AddProject<Projects.BF
     .WithReference(bffDb)
     .WaitFor(bffDb);
 
+IResourceBuilder<ProjectResource> chatMigrations = builder.AddProject<Projects.Chat_MigrationWorker>("chat-migrations")
+    .WithReference(chatDb)
+    .WaitFor(chatDb);
+
 IResourceBuilder<ProjectResource> identityIngressMigrations = builder
     .AddProject<Projects.IdentityIngress_MigrationWorker>("identity-ingress-migrations")
     .WithReference(identityIngressDb)
@@ -79,6 +83,7 @@ builder.AddProject<Projects.Chat_Api>("chat-api")
     .WithReference(bff)
     .WaitFor(redis)
     .WaitFor(chatDb)
-    .WaitFor(bff);
+    .WaitFor(bff)
+    .WaitForCompletion(chatMigrations);
 
 await builder.Build().RunAsync();
