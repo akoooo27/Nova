@@ -22,8 +22,4 @@
     <ProjectReference Include="..\Chat.Domain\Chat.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ModelCatalog\LlmProviders\Commands\" />
-  </ItemGroup>
-
 </Project>

@@ -3,7 +3,7 @@ using Chat.Domain.ModelCatalog.Entities;
 
 namespace Chat.Application.ModelCatalog.LlmProviders.Results;
 
-public static class LlmProviderResultMapper
+public static class ModelCatalogResultMapper
 {
     public static LlmProviderResult ToResult(this LlmProvider provider) => new
         (
@@ -18,7 +18,7 @@ public static class LlmProviderResultMapper
                 .ToList()
             );
 
-    private static LlmModelResult ToResult(this LlmModel model) => new
+    public static LlmModelResult ToResult(this LlmModel model) => new
     (
         Id: model.Id.Value,
         ProviderId: model.ProviderId.Value,

@@ -53,7 +53,7 @@ internal sealed class CreateLlmProviderHandler(IApplicationDbContext db)
 
         if (slugExists)
         {
-            return LlmProviderOperationFault.SlugAlreadyExists(slug);
+            return LlmProviderOperationErrors.SlugAlreadyExists(slug);
         }
 
         LlmProvider provider = LlmProvider.Create
