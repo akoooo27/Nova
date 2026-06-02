@@ -16,6 +16,11 @@
 - The MassTransit version is intentionally pinned to the latest open-source version available for this project.
 - If a package audit or dependency review mentions MassTransit, treat the current pin as deliberate unless the user explicitly asks otherwise.
 
+## Code Review Focus
+
+- When asked to review code for bugs, code smells, or potential improvements, do not report missing, extra, or preferred blank lines/newlines as findings.
+- Only mention whitespace or newline formatting when it causes a real parse, runtime, rendering, or tool-enforced style issue that is directly relevant to the review.
+
 ## Codex-Only Instructions
 
 This section is only for Codex agents. Other agents should ignore it.
