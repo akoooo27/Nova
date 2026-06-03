@@ -2,11 +2,16 @@ namespace Chat.Domain.ModelCatalog.ValueObjects;
 
 public sealed record ModelCapabilities
 {
-    public bool SupportsVision { get; }
+    public bool SupportsVision { get; private init; }
 
-    public bool SupportsReasoning { get; }
+    public bool SupportsReasoning { get; private init; }
 
-    public bool SupportsToolCalling { get; }
+    public bool SupportsToolCalling { get; private init; }
+
+    private ModelCapabilities()
+    {
+        // For EF Core
+    }
 
     private ModelCapabilities(bool supportsVision, bool supportsReasoning, bool supportsToolCalling)
     {

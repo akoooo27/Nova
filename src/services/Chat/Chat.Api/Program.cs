@@ -7,6 +7,10 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddRedisDistributedCache("redis");
+
+builder.AddNpgsqlDataSource("chat-db");
+
 builder.AddNpgsqlDbContext<ChatDbContext>
 (
     "chat-db",

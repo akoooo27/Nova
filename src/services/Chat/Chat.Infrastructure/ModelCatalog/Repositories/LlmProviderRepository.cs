@@ -1,9 +1,10 @@
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.ValueObjects;
+using Chat.Infrastructure.Database;
 
 using Microsoft.EntityFrameworkCore;
 
-namespace Chat.Infrastructure.Database.Repositories;
+namespace Chat.Infrastructure.ModelCatalog.Repositories;
 
 internal sealed class LlmProviderRepository(ChatDbContext db) : ILlmProviderRepository
 {

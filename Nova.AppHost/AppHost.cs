@@ -80,9 +80,11 @@ builder.AddProject<Projects.Chat_Api>("chat-api")
     .WithHttpsEndpoint(port: 7201, name: "https")
     .WithReference(redis)
     .WithReference(chatDb)
+    .WithReference(rabbitMq)
     .WithReference(bff)
     .WaitFor(redis)
     .WaitFor(chatDb)
+    .WaitFor(rabbitMq)
     .WaitFor(bff)
     .WaitForCompletion(chatMigrations);
 

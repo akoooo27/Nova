@@ -6,15 +6,20 @@ namespace Chat.Domain.ModelCatalog.Entities;
 
 public sealed class LlmModel : Entity<LlmModelId>
 {
-    public LlmProviderId ProviderId { get; private set; }
+    public LlmProviderId ProviderId { get; private set; } = default!;
 
-    public ExternalModelId ExternalModelId { get; private set; }
+    public ExternalModelId ExternalModelId { get; private set; } = default!;
 
-    public LlmModelProfile Profile { get; private set; }
+    public LlmModelProfile Profile { get; private set; } = default!;
 
-    public SortOrder SortOrder { get; private set; }
+    public SortOrder SortOrder { get; private set; } = default!;
 
     public bool IsEnabled { get; private set; }
+
+    private LlmModel()
+    {
+        // EF Core materialization only
+    }
 
     private LlmModel
     (

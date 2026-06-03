@@ -2,13 +2,18 @@ namespace Chat.Domain.ModelCatalog.ValueObjects;
 
 public sealed record LlmModelProfile
 {
-    public ModelName Name { get; }
+    public ModelName Name { get; private init; } = default!;
 
-    public ModelDescription Description { get; }
+    public ModelDescription Description { get; private init; } = default!;
 
-    public ContextWindow ContextWindow { get; }
+    public ContextWindow ContextWindow { get; private init; } = default!;
 
-    public ModelCapabilities Capabilities { get; }
+    public ModelCapabilities Capabilities { get; private init; } = default!;
+
+    private LlmModelProfile()
+    {
+        // For EF Core
+    }
 
     private LlmModelProfile
     (

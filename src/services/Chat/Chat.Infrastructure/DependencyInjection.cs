@@ -1,7 +1,10 @@
 using Chat.Application.Abstractions.Database;
+using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Domain.ModelCatalog;
 using Chat.Infrastructure.Database;
-using Chat.Infrastructure.Database.Repositories;
+using Chat.Infrastructure.ModelCatalog.Caching;
+using Chat.Infrastructure.ModelCatalog.Readers;
+using Chat.Infrastructure.ModelCatalog.Repositories;
 
 using MassTransit;
 
@@ -12,6 +15,10 @@ using Shared.Application.Messaging;
 using Shared.Infrastructure;
 using Shared.Infrastructure.Messaging;
 
+using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
+using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
+
 namespace Chat.Infrastructure;
 
 public static class DependencyInjection
@@ -21,6 +28,8 @@ public static class DependencyInjection
         services
             .AddSharedInfrastructure()
             .AddDatabaseServices()
+            .AddCacheServices(configuration)
+            .AddReaders()
             .AddMessagingServices(configuration);
 
     private static IServiceCollection AddDatabaseServices(this IServiceCollection services)
@@ -34,9 +43,38 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddMessagingServices(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    private static IServiceCollection AddCacheServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        string redisConnectionString = configuration.GetConnectionString("redis")
+                                       ?? throw new InvalidOperationException("Connection string 'redis' is required.");
+
+        services.AddFusionCache()
+            .WithDefaultEntryOptions(options =>
+            {
+                options.Duration = TimeSpan.FromMinutes(5);
+                options.FailSafeMaxDuration = TimeSpan.FromMinutes(30);
+                options.FactorySoftTimeout = TimeSpan.FromMilliseconds(150);
+                options.FactoryHardTimeout = TimeSpan.FromSeconds(2);
+            })
+            .WithSerializer(new FusionCacheSystemTextJsonSerializer())
+            .WithRegisteredDistributedCache()
+            .WithBackplane(new RedisBackplane(new RedisBackplaneOptions
+            {
+                Configuration = redisConnectionString
+            }));
+
+        return services;
+    }
+
+    private static IServiceCollection AddReaders(this IServiceCollection services)
+    {
+        services.AddScoped<PublicModelCatalogDapperReader>();
+        services.AddScoped<IPublicModelCatalogReader, CachedPublicModelCatalogReader>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddMessagingServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IMessageBus, MessageBus>();
 
