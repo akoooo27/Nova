@@ -2,6 +2,7 @@ using Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModel;
 using Chat.Application.ModelCatalog.LlmProviders.Results;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Entities;
+using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.ModelCatalog.ValueObjects;
 
 using ErrorOr;
@@ -43,6 +44,9 @@ public sealed class UpdateLlmModelHandlerTests
         Assert.Equal(command.SupportsVision, refreshedModel.SupportsVision);
         Assert.Equal(command.SupportsReasoning, refreshedModel.SupportsReasoning);
         Assert.Equal(command.SupportsToolCalling, refreshedModel.SupportsToolCalling);
+        LlmModelProfileUpdated domainEvent = Assert.IsType<LlmModelProfileUpdated>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
+        Assert.Equal(model.Id, domainEvent.ModelId);
         Assert.Equal(1, unitOfWork.SaveChangesCallCount);
     }
 
@@ -100,6 +104,7 @@ public sealed class UpdateLlmModelHandlerTests
         Assert.Equal(ErrorType.NotFound, error.Type);
         Assert.Equal("LlmProvider.ModelNotFound", error.Code);
         Assert.Empty(provider.Models);
+        Assert.Empty(provider.DomainEvents);
         Assert.Equal(0, unitOfWork.SaveChangesCallCount);
     }
 

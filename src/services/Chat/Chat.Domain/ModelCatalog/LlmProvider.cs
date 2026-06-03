@@ -1,4 +1,5 @@
 using Chat.Domain.ModelCatalog.Entities;
+using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.ModelCatalog.ValueObjects;
 using Chat.Domain.Shared;
 
@@ -83,6 +84,7 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         }
 
         model.UpdateProfile(profile);
+        AddDomainEvent(new LlmModelProfileUpdated(Id, model.Id));
 
         return model;
     }

@@ -1,5 +1,6 @@
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Entities;
+using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.ModelCatalog.ValueObjects;
 using Chat.Domain.Shared;
 
@@ -97,6 +98,21 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
+    public void RefreshModelProfileAddsModelProfileUpdatedDomainEvent()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        LlmModel model = AddModel(provider);
+        LlmModelProfile profile = TestCatalogFactory.CreateProfile("GPT-4.1 mini");
+
+        ErrorOr<LlmModel> result = provider.RefreshModelProfile(model.Id, profile);
+
+        Assert.False(result.IsError);
+        LlmModelProfileUpdated domainEvent = Assert.IsType<LlmModelProfileUpdated>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
+        Assert.Equal(model.Id, domainEvent.ModelId);
+    }
+
+    [Fact]
     public void RefreshModelProfileReturnsNotFoundWhenModelDoesNotExist()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
@@ -111,6 +127,7 @@ public sealed class LlmProviderTests
         Error error = Assert.Single(result.Errors);
         Assert.Equal(ErrorType.NotFound, error.Type);
         Assert.Equal("LlmProvider.ModelNotFound", error.Code);
+        Assert.Empty(provider.DomainEvents);
     }
 
     [Fact]

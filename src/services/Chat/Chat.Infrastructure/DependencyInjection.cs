@@ -1,6 +1,7 @@
 using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Domain.ModelCatalog;
+using Chat.Domain.ModelCatalog.Events;
 using Chat.Infrastructure.Database;
 using Chat.Infrastructure.ModelCatalog.Caching;
 using Chat.Infrastructure.ModelCatalog.Readers;
@@ -8,11 +9,14 @@ using Chat.Infrastructure.ModelCatalog.Repositories;
 
 using MassTransit;
 
+using Mediator;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Shared.Application.Messaging;
 using Shared.Infrastructure;
+using Shared.Infrastructure.DomainEvents;
 using Shared.Infrastructure.Messaging;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -62,6 +66,10 @@ public static class DependencyInjection
             {
                 Configuration = redisConnectionString
             }));
+
+        services
+            .AddScoped<INotificationHandler<DomainEventNotification<LlmModelProfileUpdated>>,
+                LlmModelProfileUpdatedCacheHandler>();
 
         return services;
     }
