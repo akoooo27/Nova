@@ -6,6 +6,7 @@ using Chat.Infrastructure.Database;
 using Chat.Infrastructure.ModelCatalog.Caching;
 using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
+using Chat.Infrastructure.Users.Consumers;
 
 using MassTransit;
 
@@ -90,6 +91,10 @@ public static class DependencyInjection
         services.AddMassTransit(configurator =>
         {
             configurator.SetKebabCaseEndpointNameFormatter();
+
+            configurator.AddConsumer<UserRegisteredConsumer>();
+            configurator.AddConsumer<UserUpdatedConsumer>();
+            configurator.AddConsumer<UserDeletedConsumer>();
 
             configurator.AddEntityFrameworkOutbox<ChatDbContext>(outbox =>
             {

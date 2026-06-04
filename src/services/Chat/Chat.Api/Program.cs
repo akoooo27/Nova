@@ -6,6 +6,8 @@ using FastEndpoints.Swagger;
 
 using Microsoft.EntityFrameworkCore;
 
+using Npgsql;
+
 using Scalar.AspNetCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -16,11 +18,16 @@ builder.AddRedisDistributedCache("redis");
 
 builder.AddNpgsqlDataSource("chat-db");
 
-builder.AddNpgsqlDbContext<ChatDbContext>
-(
-    "chat-db",
-    configureDbContextOptions: options => options.UseSnakeCaseNamingConvention()
-);
+builder.Services.AddDbContext<ChatDbContext>((sp, options) =>
+{
+    NpgsqlDataSource dataSource = sp.GetRequiredService<NpgsqlDataSource>();
+
+    options
+        .UseNpgsql(dataSource)
+        .UseSnakeCaseNamingConvention();
+});
+
+builder.EnrichNpgsqlDbContext<ChatDbContext>();
 
 builder.Services.AddApi(builder.Configuration);
 

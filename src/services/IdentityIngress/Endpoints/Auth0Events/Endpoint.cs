@@ -32,7 +32,6 @@ internal sealed class Endpoint(
     {
         Post("/api/auth0/events");
         AllowAnonymous();
-        Version(1);
 
         Options(builder => builder.WithName(RouteName));
 
@@ -66,7 +65,7 @@ internal sealed class Endpoint(
 
         MappedIdentityEvent mapping = mappingResult.Value;
 
-        await messageBus.PublishAsync(mappingResult.Value, ct);
+        await messageBus.PublishAsync(mapping.Event, ct);
         await dbContext.SaveChangesAsync(ct);
 
         await Send.ResponseAsync

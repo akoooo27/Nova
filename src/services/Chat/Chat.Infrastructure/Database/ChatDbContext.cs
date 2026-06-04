@@ -1,5 +1,6 @@
 using Chat.Application.Abstractions.Database;
 using Chat.Domain.ModelCatalog;
+using Chat.Infrastructure.Users.Models;
 
 using MassTransit;
 
@@ -17,6 +18,8 @@ public sealed class ChatDbContext(
     : DbContext(options), IUnitOfWork
 {
     public DbSet<LlmProvider> LlmProviders => Set<LlmProvider>();
+
+    internal DbSet<UserReadModel> Users => Set<UserReadModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
