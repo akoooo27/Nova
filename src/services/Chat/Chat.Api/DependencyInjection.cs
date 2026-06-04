@@ -1,6 +1,9 @@
 using Chat.Application;
 using Chat.Infrastructure;
 
+using FastEndpoints;
+using FastEndpoints.Swagger;
+
 namespace Chat.Api;
 
 internal static class DependencyInjection
@@ -9,9 +12,31 @@ internal static class DependencyInjection
     {
         services
             .AddApplication()
-            .AddInfrastructure(configuration);
+            .AddInfrastructure(configuration)
+            .AddFastEndpointsInternal();
 
         return services;
     }
 
+    private static void AddFastEndpointsInternal(this IServiceCollection services)
+    {
+        services.AddFastEndpoints(options =>
+        {
+            options.Assemblies =
+            [
+                typeof(DependencyInjection).Assembly
+            ];
+        });
+
+        services.SwaggerDocument(options =>
+        {
+            options.MaxEndpointVersion = 1;
+            options.DocumentSettings = settings =>
+            {
+                settings.Title = "Chat API";
+                settings.Description = "API for chatting with llm models.";
+                settings.Version = "v1";
+            };
+        });
+    }
 }
