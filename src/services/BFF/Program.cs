@@ -1,5 +1,6 @@
 using BFF.Database;
 using BFF.FrontendProxy;
+using BFF.RemoteApis;
 
 using Duende.Bff;
 using Duende.Bff.Builder;
@@ -41,9 +42,15 @@ builder.Services
     .AddReverseProxy()
     .LoadFromMemory
     (
-        FrontendProxyConfiguration.CreateRoutes(),
-        FrontendProxyConfiguration.CreateClusters(
-            FrontendProxyConfiguration.GetFrontendAddress(builder.Configuration))
+        [
+            ChatApiProxyConfiguration.CreateRoute(),
+            ..FrontendProxyConfiguration.CreateRoutes()
+        ],
+        [
+            ChatApiProxyConfiguration.CreateCluster(ChatApiProxyConfiguration.GetAddress(builder.Configuration)),
+            ..FrontendProxyConfiguration.CreateClusters(
+                FrontendProxyConfiguration.GetFrontendAddress(builder.Configuration))
+        ]
     )
     .AddBffExtensions();
 
@@ -98,6 +105,9 @@ app.UseAuthentication();
 app.UseBff();
 app.UseAuthorization();
 
-app.MapReverseProxy();
+app.MapReverseProxy(proxyApp =>
+{
+    proxyApp.UseAntiforgeryCheck();
+});
 
 await app.RunAsync();

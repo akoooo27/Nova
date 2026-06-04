@@ -1,5 +1,5 @@
-using Chat.Api.Endpoints;
 using Chat.Api.Endpoints.ModelCatalog.Responses;
+using Chat.Api.Security;
 using Chat.Application.ModelCatalog.LlmProviders.Commands.CreateLlmProvider;
 using Chat.Application.ModelCatalog.LlmProviders.Results;
 
@@ -21,6 +21,8 @@ internal sealed class Endpoint(ISender sender) : BaseEndpoint<Request, LlmProvid
     {
         Post("/model-catalog/providers");
         Version(1);
+
+        Permissions(ChatPermissions.ManageModelCatalog);
 
         Options(builder => builder.WithName(RouteName));
 

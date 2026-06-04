@@ -1,4 +1,5 @@
 using Chat.Api.Endpoints.ModelCatalog.Responses;
+using Chat.Api.Security;
 using Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModel;
 using Chat.Application.ModelCatalog.LlmProviders.Results;
 
@@ -20,6 +21,8 @@ internal sealed class Endpoint(ISender sender) : BaseEndpoint<Request, LlmModelR
     {
         Patch("/model-catalog/providers/{providerId}/models/{modelId}");
         Version(1);
+
+        Permissions(ChatPermissions.ManageModelCatalog);
 
         Options(builder => builder.WithName(RouteName));
 

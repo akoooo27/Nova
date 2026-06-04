@@ -43,6 +43,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseFastEndpoints(c =>
 {
     c.Versioning.Prefix = "v";

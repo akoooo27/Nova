@@ -75,17 +75,22 @@ builder.AddDevTunnel(
     })
     .WithReference(identityIngress.GetEndpoint("https"), allowAnonymous: true);
 
-builder.AddProject<Projects.Chat_Api>("chat-api")
+IResourceBuilder<ProjectResource> chatApi = builder.AddProject<Projects.Chat_Api>("chat-api")
     .WithHttpEndpoint(port: 7200, name: "http")
     .WithHttpsEndpoint(port: 7201, name: "https")
+    .WithEnvironment("Auth0__Domain", auth0Domain)
+    .WithEnvironment("Auth0__Audience", auth0Audience)
     .WithReference(redis)
     .WithReference(chatDb)
     .WithReference(rabbitMq)
-    .WithReference(bff)
     .WaitFor(redis)
     .WaitFor(chatDb)
     .WaitFor(rabbitMq)
-    .WaitFor(bff)
     .WaitForCompletion(chatMigrations);
+
+bff
+    .WithEnvironment("ChatApi__Address", chatApi.GetEndpoint("https"))
+    .WithReference(chatApi)
+    .WaitFor(chatApi);
 
 await builder.Build().RunAsync();

@@ -31,6 +31,7 @@ public static class DependencyInjection
         AddInfrastructure(this IServiceCollection services, IConfiguration configuration) =>
         services
             .AddSharedInfrastructure()
+            .AddAuth0JwtAuthentication(configuration)
             .AddDatabaseServices()
             .AddCacheServices(configuration)
             .AddReaders()

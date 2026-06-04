@@ -21,6 +21,10 @@
 - When asked to review code for bugs, code smells, or potential improvements, do not report missing, extra, or preferred blank lines/newlines as findings.
 - Only mention whitespace or newline formatting when it causes a real parse, runtime, rendering, or tool-enforced style issue that is directly relevant to the review.
 
+## Testing
+
+- Do not decide to write, modify, or expand tests without asking the user first, unless the user explicitly requested test work.
+
 ## Codex-Only Instructions
 
 This section is only for Codex agents. Other agents should ignore it.

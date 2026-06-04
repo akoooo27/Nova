@@ -9,15 +9,15 @@
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
 
     <!-- Aspire -->
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.0" />
-    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.0" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.0" />
-    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.0" />
-    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.0" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.2" />
+    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.2" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.2" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.2" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.2" />
 
-    <PackageVersion Include="Aspire.Npgsql" Version="13.4.0" />
-    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.0" />
-    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.0" />
+    <PackageVersion Include="Aspire.Npgsql" Version="13.4.2" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.2" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.2" />
 
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.6.0" />
@@ -36,17 +36,19 @@
 
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    
+
     <!-- Infrastructure -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
+
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
 
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.8" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
-    
+
     <PackageVersion Include="Dapper" Version="2.1.79" />
-    
+
     <PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.6.0" />
     <PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="2.6.0" />
     <PackageVersion Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" Version="2.6.0" />
