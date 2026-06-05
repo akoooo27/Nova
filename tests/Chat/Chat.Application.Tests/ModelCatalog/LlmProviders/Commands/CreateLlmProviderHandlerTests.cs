@@ -18,7 +18,7 @@ public sealed class CreateLlmProviderHandlerTests
         (
             Name: "OpenAI",
             Slug: "openai",
-            SortOrder: 2,
+            IsFeatured: true,
             LogoKey: "llm-providers/openai.svg"
         );
 
@@ -29,7 +29,7 @@ public sealed class CreateLlmProviderHandlerTests
         Assert.NotEqual(Guid.Empty, provider.Id);
         Assert.Equal(command.Name, provider.Name);
         Assert.Equal(command.Slug, provider.Slug);
-        Assert.Equal(command.SortOrder, provider.SortOrder);
+        Assert.Equal(command.IsFeatured, provider.IsFeatured);
         Assert.Equal(command.LogoKey, provider.LogoKey);
         Assert.Empty(provider.Models);
         Assert.Single(providers.AddedProviders);
@@ -47,7 +47,7 @@ public sealed class CreateLlmProviderHandlerTests
         (
             Name: "OpenAI",
             Slug: "openai",
-            SortOrder: null,
+            IsFeatured: false,
             LogoKey: null
         );
 
@@ -71,7 +71,7 @@ public sealed class CreateLlmProviderHandlerTests
         (
             Name: "",
             Slug: "",
-            SortOrder: 0,
+            IsFeatured: false,
             LogoKey: null
         );
 
@@ -80,7 +80,6 @@ public sealed class CreateLlmProviderHandlerTests
         Assert.True(result.IsError);
         Assert.Contains(result.Errors, x => x.Code == "ProviderName.Required");
         Assert.Contains(result.Errors, x => x.Code == "ProviderSlug.Required");
-        Assert.Contains(result.Errors, x => x.Code == "SortOrder.Invalid");
         Assert.Empty(providers.AddedProviders);
         Assert.Equal(0, unitOfWork.SaveChangesCallCount);
     }

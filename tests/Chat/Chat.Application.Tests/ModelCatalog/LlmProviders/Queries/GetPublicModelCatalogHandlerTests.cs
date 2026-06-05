@@ -45,8 +45,7 @@ public sealed class GetPublicModelCatalogHandlerTests
             ContextWindow: 128000,
             SupportsVision: true,
             SupportsReasoning: false,
-            SupportsToolCalling: true,
-            SortOrder: 1
+            SupportsToolCalling: true
         );
 
         PublicLlmProviderReadModel provider = new
@@ -54,7 +53,7 @@ public sealed class GetPublicModelCatalogHandlerTests
             Id: providerId,
             Name: "OpenAI",
             Slug: "openai",
-            SortOrder: 1,
+            IsFeatured: true,
             LogoKey: "llm-providers/openai.svg",
             Models: [model]
         );

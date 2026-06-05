@@ -113,8 +113,7 @@ public sealed class UpdateLlmModelHandlerTests
         ErrorOr<LlmModel> result = provider.AddModel
         (
             externalModelId: TestCatalogFactory.CreateExternalModelId(),
-            profile: TestCatalogFactory.CreateProfile(),
-            sortOrder: SortOrder.First
+            profile: TestCatalogFactory.CreateProfile()
         );
 
         return result.Value;

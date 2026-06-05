@@ -15,19 +15,18 @@ public sealed class LlmProviderTests
     {
         ProviderName name = ProviderName.FromDatabase("OpenAI");
         ProviderSlug slug = ProviderSlug.FromDatabase("openai");
-        SortOrder sortOrder = SortOrder.FromDatabase(2);
 
         LlmProvider provider = LlmProvider.Create
         (
             name: name,
             slug: slug,
-            sortOrder: sortOrder
+            isFeatured: true
         );
 
         Assert.NotEqual(Guid.Empty, provider.Id.Value);
         Assert.Equal(name, provider.Name);
         Assert.Equal(slug, provider.Slug);
-        Assert.Equal(sortOrder, provider.SortOrder);
+        Assert.True(provider.IsFeatured);
         Assert.Null(provider.LogoKey);
         Assert.Empty(provider.Models);
     }
@@ -38,13 +37,10 @@ public sealed class LlmProviderTests
         LlmProvider provider = TestCatalogFactory.CreateProvider();
         ExternalModelId externalModelId = TestCatalogFactory.CreateExternalModelId();
         LlmModelProfile profile = TestCatalogFactory.CreateProfile();
-        SortOrder sortOrder = SortOrder.FromDatabase(3);
-
         ErrorOr<LlmModel> result = provider.AddModel
         (
             externalModelId: externalModelId,
-            profile: profile,
-            sortOrder: sortOrder
+            profile: profile
         );
 
         Assert.False(result.IsError);
@@ -52,7 +48,6 @@ public sealed class LlmProviderTests
         Assert.Equal(provider.Id, model.ProviderId);
         Assert.Equal(externalModelId, model.ExternalModelId);
         Assert.Equal(profile, model.Profile);
-        Assert.Equal(sortOrder, model.SortOrder);
         Assert.True(model.IsEnabled);
         Assert.Same(model, Assert.Single(provider.Models));
     }
@@ -65,15 +60,13 @@ public sealed class LlmProviderTests
         _ = provider.AddModel
         (
             externalModelId: externalModelId,
-            profile: TestCatalogFactory.CreateProfile(),
-            sortOrder: SortOrder.First
+            profile: TestCatalogFactory.CreateProfile()
         );
 
         ErrorOr<LlmModel> result = provider.AddModel
         (
             externalModelId: externalModelId,
-            profile: TestCatalogFactory.CreateProfile("GPT-4.1 mini"),
-            sortOrder: SortOrder.FromDatabase(2)
+            profile: TestCatalogFactory.CreateProfile("GPT-4.1 mini")
         );
 
         Assert.True(result.IsError);
@@ -131,36 +124,6 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
-    public void UpdateModelSortOrderUpdatesExistingModel()
-    {
-        LlmProvider provider = TestCatalogFactory.CreateProvider();
-        LlmModel model = AddModel(provider);
-        SortOrder sortOrder = SortOrder.FromDatabase(9);
-
-        ErrorOr<Success> result = provider.UpdateModelSortOrder(model.Id, sortOrder);
-
-        Assert.False(result.IsError);
-        Assert.Equal(sortOrder, model.SortOrder);
-    }
-
-    [Fact]
-    public void UpdateModelSortOrderReturnsNotFoundWhenModelDoesNotExist()
-    {
-        LlmProvider provider = TestCatalogFactory.CreateProvider();
-
-        ErrorOr<Success> result = provider.UpdateModelSortOrder
-        (
-            modelId: LlmModelId.New(),
-            sortOrder: SortOrder.First
-        );
-
-        Assert.True(result.IsError);
-        Error error = Assert.Single(result.Errors);
-        Assert.Equal(ErrorType.NotFound, error.Type);
-        Assert.Equal("LlmProvider.ModelNotFound", error.Code);
-    }
-
-    [Fact]
     public void DisableModelDisablesExistingModel()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
@@ -212,14 +175,31 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
-    public void UpdateSortOrderReplacesProviderSortOrder()
+    public void UpdateDetailsReplacesProviderDetailsAndAddsDomainEvent()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
-        SortOrder sortOrder = SortOrder.FromDatabase(7);
+        ProviderName name = ProviderName.FromDatabase("Anthropic");
+        ProviderSlug slug = ProviderSlug.FromDatabase("anthropic");
+        AssetKey logoKey = AssetKey.Create("llm-providers/anthropic.svg").Value;
 
-        provider.UpdateSortOrder(sortOrder);
+        provider.UpdateDetails(name, slug, logoKey, isFeatured: true);
 
-        Assert.Equal(sortOrder, provider.SortOrder);
+        Assert.Equal(name, provider.Name);
+        Assert.Equal(slug, provider.Slug);
+        Assert.Equal(logoKey, provider.LogoKey);
+        Assert.True(provider.IsFeatured);
+        LlmProviderUpdated domainEvent = Assert.IsType<LlmProviderUpdated>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
+    }
+
+    [Fact]
+    public void UpdateDetailsDoesNotAddDomainEventWhenDetailsAreUnchanged()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+
+        provider.UpdateDetails(provider.Name, provider.Slug, provider.LogoKey, provider.IsFeatured);
+
+        Assert.Empty(provider.DomainEvents);
     }
 
     [Fact]
@@ -250,8 +230,7 @@ public sealed class LlmProviderTests
         ErrorOr<LlmModel> result = provider.AddModel
         (
             externalModelId: TestCatalogFactory.CreateExternalModelId(),
-            profile: TestCatalogFactory.CreateProfile(),
-            sortOrder: SortOrder.First
+            profile: TestCatalogFactory.CreateProfile()
         );
 
         return result.Value;

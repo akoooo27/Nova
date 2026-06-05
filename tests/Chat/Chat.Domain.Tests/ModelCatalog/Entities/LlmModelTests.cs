@@ -7,26 +7,22 @@ namespace Chat.Domain.Tests.ModelCatalog.Entities;
 public sealed class LlmModelTests
 {
     [Fact]
-    public void CreateInitializesEnabledModelWithProviderExternalIdProfileAndSortOrder()
+    public void CreateInitializesEnabledModelWithProviderExternalIdAndProfile()
     {
         LlmProviderId providerId = LlmProviderId.New();
         ExternalModelId externalModelId = TestCatalogFactory.CreateExternalModelId();
         LlmModelProfile profile = TestCatalogFactory.CreateProfile();
-        SortOrder sortOrder = SortOrder.FromDatabase(2);
-
         LlmModel model = LlmModel.Create
         (
             providerId: providerId,
             externalModelId: externalModelId,
-            profile: profile,
-            sortOrder: sortOrder
+            profile: profile
         );
 
         Assert.NotEqual(Guid.Empty, model.Id.Value);
         Assert.Equal(providerId, model.ProviderId);
         Assert.Equal(externalModelId, model.ExternalModelId);
         Assert.Equal(profile, model.Profile);
-        Assert.Equal(sortOrder, model.SortOrder);
         Assert.True(model.IsEnabled);
     }
 
@@ -62,25 +58,13 @@ public sealed class LlmModelTests
         Assert.Equal(profile, model.Profile);
     }
 
-    [Fact]
-    public void UpdateSortOrderReplacesSortOrder()
-    {
-        LlmModel model = CreateModel();
-        SortOrder sortOrder = SortOrder.FromDatabase(5);
-
-        model.UpdateSortOrder(sortOrder);
-
-        Assert.Equal(sortOrder, model.SortOrder);
-    }
-
     private static LlmModel CreateModel()
     {
         return LlmModel.Create
         (
             providerId: LlmProviderId.New(),
             externalModelId: TestCatalogFactory.CreateExternalModelId(),
-            profile: TestCatalogFactory.CreateProfile(),
-            sortOrder: SortOrder.First
+            profile: TestCatalogFactory.CreateProfile()
         );
     }
 }

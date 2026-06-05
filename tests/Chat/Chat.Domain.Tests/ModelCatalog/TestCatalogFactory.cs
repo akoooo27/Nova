@@ -11,7 +11,7 @@ internal static class TestCatalogFactory
         (
             name: ProviderName.FromDatabase("OpenAI"),
             slug: ProviderSlug.FromDatabase("openai"),
-            sortOrder: SortOrder.FromDatabase(1)
+            isFeatured: false
         );
     }
 

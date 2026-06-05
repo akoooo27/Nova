@@ -5,13 +5,18 @@ namespace Chat.Application.Tests.ModelCatalog;
 
 internal static class TestCatalogFactory
 {
-    public static LlmProvider CreateProvider()
+    public static LlmProvider CreateProvider
+    (
+        string name = "OpenAI",
+        string slug = "openai",
+        bool isFeatured = false
+    )
     {
         return LlmProvider.Create
         (
-            name: ProviderName.FromDatabase("OpenAI"),
-            slug: ProviderSlug.FromDatabase("openai"),
-            sortOrder: SortOrder.FromDatabase(1)
+            name: ProviderName.FromDatabase(name),
+            slug: ProviderSlug.FromDatabase(slug),
+            isFeatured: isFeatured
         );
     }
 

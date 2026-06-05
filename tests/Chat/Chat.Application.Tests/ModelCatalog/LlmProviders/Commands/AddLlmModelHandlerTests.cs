@@ -27,8 +27,7 @@ public sealed class AddLlmModelHandlerTests
             ContextWindow: 128000,
             SupportsVision: true,
             SupportsReasoning: false,
-            SupportsToolCalling: true,
-            SortOrder: 3
+            SupportsToolCalling: true
         );
 
         ErrorOr<LlmModelResult> result = await handler.Handle(command, CancellationToken.None);
@@ -43,7 +42,6 @@ public sealed class AddLlmModelHandlerTests
         Assert.Equal(command.SupportsVision, model.SupportsVision);
         Assert.Equal(command.SupportsReasoning, model.SupportsReasoning);
         Assert.Equal(command.SupportsToolCalling, model.SupportsToolCalling);
-        Assert.Equal(command.SortOrder, model.SortOrder);
         Assert.True(model.IsEnabled);
         Assert.Single(provider.Models);
         Assert.Equal(1, unitOfWork.SaveChangesCallCount);
@@ -65,8 +63,7 @@ public sealed class AddLlmModelHandlerTests
             ContextWindow: 128000,
             SupportsVision: true,
             SupportsReasoning: false,
-            SupportsToolCalling: true,
-            SortOrder: null
+            SupportsToolCalling: true
         );
 
         ErrorOr<LlmModelResult> result = await handler.Handle(command, CancellationToken.None);
@@ -86,8 +83,7 @@ public sealed class AddLlmModelHandlerTests
         ErrorOr<LlmModel> existingModelResult = provider.AddModel
         (
             externalModelId: externalModelId,
-            profile: TestCatalogFactory.CreateProfile(),
-            sortOrder: SortOrder.First
+            profile: TestCatalogFactory.CreateProfile()
         );
         Assert.False(existingModelResult.IsError);
 
@@ -104,8 +100,7 @@ public sealed class AddLlmModelHandlerTests
             ContextWindow: 128000,
             SupportsVision: true,
             SupportsReasoning: false,
-            SupportsToolCalling: true,
-            SortOrder: 2
+            SupportsToolCalling: true
         );
 
         ErrorOr<LlmModelResult> result = await handler.Handle(command, CancellationToken.None);

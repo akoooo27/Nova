@@ -34,13 +34,21 @@ internal sealed class FakeLlmProviderRepository : ILlmProviderRepository
         return Task.FromResult(exists);
     }
 
+    public Task<bool> ExistsBySlugAsync
+    (
+        ProviderSlug slug,
+        LlmProviderId excludedProviderId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        bool exists = _existingSlugs.Contains(slug)
+                      || _providers.Any(provider => provider.Id != excludedProviderId && provider.Slug == slug);
+
+        return Task.FromResult(exists);
+    }
+
     public void Add(LlmProvider provider)
     {
         _providers.Add(provider);
-    }
-
-    public Task<bool> ExistsBySlugAsync(ProviderSlug slug, LlmProviderId excludedProviderId, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
     }
 }
