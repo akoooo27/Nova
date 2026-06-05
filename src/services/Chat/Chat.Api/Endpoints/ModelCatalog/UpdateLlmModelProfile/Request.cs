@@ -1,4 +1,4 @@
-namespace Chat.Api.Endpoints.ModelCatalog.UpdateLlmModel;
+namespace Chat.Api.Endpoints.ModelCatalog.UpdateLlmModelProfile;
 
 internal sealed class Request
 {

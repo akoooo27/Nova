@@ -72,7 +72,7 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         return model;
     }
 
-    public ErrorOr<LlmModel> RefreshModelProfile(LlmModelId modelId, LlmModelProfile profile)
+    public ErrorOr<LlmModel> UpdateModelProfile(LlmModelId modelId, LlmModelProfile profile)
     {
         LlmModel? model = FindModel(modelId);
 

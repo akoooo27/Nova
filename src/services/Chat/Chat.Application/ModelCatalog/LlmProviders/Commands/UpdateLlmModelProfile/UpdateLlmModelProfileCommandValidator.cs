@@ -1,10 +1,10 @@
 using FluentValidation;
 
-namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModel;
+namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModelProfile;
 
-internal sealed class UpdateLlmModelCommandValidator : AbstractValidator<UpdateLlmModelCommand>
+internal sealed class UpdateLlmModelProfileCommandValidator : AbstractValidator<UpdateLlmModelProfileCommand>
 {
-    public UpdateLlmModelCommandValidator()
+    public UpdateLlmModelProfileCommandValidator()
     {
         RuleFor(x => x.ProviderId)
             .NotEmpty();

@@ -9,12 +9,12 @@ using ErrorOr;
 
 using Mediator;
 
-namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModel;
+namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModelProfile;
 
-internal sealed class UpdateLlmModelHandler(ILlmProviderRepository providers, IUnitOfWork unitOfWork)
-    : ICommandHandler<UpdateLlmModelCommand, ErrorOr<LlmModelResult>>
+internal sealed class UpdateLlmModelProfileHandler(ILlmProviderRepository providers, IUnitOfWork unitOfWork)
+    : ICommandHandler<UpdateLlmModelProfileCommand, ErrorOr<LlmModelResult>>
 {
-    public async ValueTask<ErrorOr<LlmModelResult>> Handle(UpdateLlmModelCommand command, CancellationToken cancellationToken)
+    public async ValueTask<ErrorOr<LlmModelResult>> Handle(UpdateLlmModelProfileCommand command, CancellationToken cancellationToken)
     {
         ErrorOr<LlmProviderId> providerIdResult = LlmProviderId.Create(command.ProviderId);
         ErrorOr<LlmModelId> modelIdResult = LlmModelId.Create(command.ModelId);
@@ -80,16 +80,16 @@ internal sealed class UpdateLlmModelHandler(ILlmProviderRepository providers, IU
             capabilities: capabilitiesResult.Value
         );
 
-        ErrorOr<LlmModel> modelRefreshResult = provider.RefreshModelProfile(modelIdResult.Value, profile);
+        ErrorOr<LlmModel> modelUpdateResult = provider.UpdateModelProfile(modelIdResult.Value, profile);
 
-        if (modelRefreshResult.IsError)
+        if (modelUpdateResult.IsError)
         {
-            return modelRefreshResult.Errors;
+            return modelUpdateResult.Errors;
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        LlmModel model = modelRefreshResult.Value;
+        LlmModel model = modelUpdateResult.Value;
 
         return model.ToResult();
     }

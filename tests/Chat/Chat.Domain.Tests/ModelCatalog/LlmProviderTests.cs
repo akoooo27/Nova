@@ -77,13 +77,13 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
-    public void RefreshModelProfileUpdatesExistingModelAndReturnsIt()
+    public void UpdateModelProfileUpdatesExistingModelAndReturnsIt()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
         LlmModel model = AddModel(provider);
         LlmModelProfile profile = TestCatalogFactory.CreateProfile("GPT-4.1 mini");
 
-        ErrorOr<LlmModel> result = provider.RefreshModelProfile(model.Id, profile);
+        ErrorOr<LlmModel> result = provider.UpdateModelProfile(model.Id, profile);
 
         Assert.False(result.IsError);
         Assert.Same(model, result.Value);
@@ -91,13 +91,13 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
-    public void RefreshModelProfileAddsModelProfileUpdatedDomainEvent()
+    public void UpdateModelProfileAddsModelProfileUpdatedDomainEvent()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
         LlmModel model = AddModel(provider);
         LlmModelProfile profile = TestCatalogFactory.CreateProfile("GPT-4.1 mini");
 
-        ErrorOr<LlmModel> result = provider.RefreshModelProfile(model.Id, profile);
+        ErrorOr<LlmModel> result = provider.UpdateModelProfile(model.Id, profile);
 
         Assert.False(result.IsError);
         LlmModelProfileUpdated domainEvent = Assert.IsType<LlmModelProfileUpdated>(Assert.Single(provider.DomainEvents));
@@ -106,11 +106,11 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
-    public void RefreshModelProfileReturnsNotFoundWhenModelDoesNotExist()
+    public void UpdateModelProfileReturnsNotFoundWhenModelDoesNotExist()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
 
-        ErrorOr<LlmModel> result = provider.RefreshModelProfile
+        ErrorOr<LlmModel> result = provider.UpdateModelProfile
         (
             modelId: LlmModelId.New(),
             profile: TestCatalogFactory.CreateProfile()

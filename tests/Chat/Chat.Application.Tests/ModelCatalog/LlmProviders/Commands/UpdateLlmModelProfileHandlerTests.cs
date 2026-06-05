@@ -1,4 +1,4 @@
-using Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModel;
+using Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModelProfile;
 using Chat.Application.ModelCatalog.LlmProviders.Results;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Entities;
@@ -9,18 +9,18 @@ using ErrorOr;
 
 namespace Chat.Application.Tests.ModelCatalog.LlmProviders.Commands;
 
-public sealed class UpdateLlmModelHandlerTests
+public sealed class UpdateLlmModelProfileHandlerTests
 {
     [Fact]
-    public async Task HandleRefreshesModelProfileAndSavesChanges()
+    public async Task HandleUpdatesModelProfileAndSavesChanges()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
         LlmModel model = AddModel(provider);
         FakeLlmProviderRepository providers = new();
         providers.AddExistingProvider(provider);
         FakeUnitOfWork unitOfWork = new();
-        UpdateLlmModelHandler handler = new(providers, unitOfWork);
-        UpdateLlmModelCommand command = new
+        UpdateLlmModelProfileHandler handler = new(providers, unitOfWork);
+        UpdateLlmModelProfileCommand command = new
         (
             ProviderId: provider.Id.Value,
             ModelId: model.Id.Value,
@@ -35,15 +35,15 @@ public sealed class UpdateLlmModelHandlerTests
         ErrorOr<LlmModelResult> result = await handler.Handle(command, CancellationToken.None);
 
         Assert.False(result.IsError);
-        LlmModelResult refreshedModel = result.Value;
-        Assert.Equal(model.Id.Value, refreshedModel.Id);
-        Assert.Equal(provider.Id.Value, refreshedModel.ProviderId);
-        Assert.Equal(command.Name, refreshedModel.Name);
-        Assert.Equal(command.Description, refreshedModel.Description);
-        Assert.Equal(command.ContextWindow, refreshedModel.ContextWindow);
-        Assert.Equal(command.SupportsVision, refreshedModel.SupportsVision);
-        Assert.Equal(command.SupportsReasoning, refreshedModel.SupportsReasoning);
-        Assert.Equal(command.SupportsToolCalling, refreshedModel.SupportsToolCalling);
+        LlmModelResult updatedModel = result.Value;
+        Assert.Equal(model.Id.Value, updatedModel.Id);
+        Assert.Equal(provider.Id.Value, updatedModel.ProviderId);
+        Assert.Equal(command.Name, updatedModel.Name);
+        Assert.Equal(command.Description, updatedModel.Description);
+        Assert.Equal(command.ContextWindow, updatedModel.ContextWindow);
+        Assert.Equal(command.SupportsVision, updatedModel.SupportsVision);
+        Assert.Equal(command.SupportsReasoning, updatedModel.SupportsReasoning);
+        Assert.Equal(command.SupportsToolCalling, updatedModel.SupportsToolCalling);
         LlmModelProfileUpdated domainEvent = Assert.IsType<LlmModelProfileUpdated>(Assert.Single(provider.DomainEvents));
         Assert.Equal(provider.Id, domainEvent.ProviderId);
         Assert.Equal(model.Id, domainEvent.ModelId);
@@ -55,8 +55,8 @@ public sealed class UpdateLlmModelHandlerTests
     {
         FakeLlmProviderRepository providers = new();
         FakeUnitOfWork unitOfWork = new();
-        UpdateLlmModelHandler handler = new(providers, unitOfWork);
-        UpdateLlmModelCommand command = new
+        UpdateLlmModelProfileHandler handler = new(providers, unitOfWork);
+        UpdateLlmModelProfileCommand command = new
         (
             ProviderId: Guid.CreateVersion7(),
             ModelId: Guid.CreateVersion7(),
@@ -84,8 +84,8 @@ public sealed class UpdateLlmModelHandlerTests
         FakeLlmProviderRepository providers = new();
         providers.AddExistingProvider(provider);
         FakeUnitOfWork unitOfWork = new();
-        UpdateLlmModelHandler handler = new(providers, unitOfWork);
-        UpdateLlmModelCommand command = new
+        UpdateLlmModelProfileHandler handler = new(providers, unitOfWork);
+        UpdateLlmModelProfileCommand command = new
         (
             ProviderId: provider.Id.Value,
             ModelId: Guid.CreateVersion7(),

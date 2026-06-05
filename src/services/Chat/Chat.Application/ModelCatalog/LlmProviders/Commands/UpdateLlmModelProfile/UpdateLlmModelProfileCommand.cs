@@ -4,9 +4,9 @@ using ErrorOr;
 
 using Mediator;
 
-namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModel;
+namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmModelProfile;
 
-public sealed record UpdateLlmModelCommand
+public sealed record UpdateLlmModelProfileCommand
 (
     Guid ProviderId,
     Guid ModelId,
