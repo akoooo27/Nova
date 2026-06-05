@@ -11,6 +11,5 @@ public sealed record LlmModelResult
     bool SupportsVision,
     bool SupportsReasoning,
     bool SupportsToolCalling,
-    int SortOrder,
     bool IsEnabled
 );

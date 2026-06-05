@@ -42,12 +42,8 @@ internal sealed class LlmProviderConfiguration : IEntityTypeConfiguration<LlmPro
             .HasMaxLength(ModelCatalogLimits.ProviderSlugMaxLength)
             .IsRequired();
 
-        builder.Property(provider => provider.SortOrder)
-            .HasConversion
-            (
-                sortOrder => sortOrder.Value,
-                value => SortOrder.FromDatabase(value)
-            )
+        builder.Property(provider => provider.IsFeatured)
+            .HasDefaultValue(false)
             .IsRequired();
 
         builder.Property(provider => provider.LogoKey)
@@ -61,7 +57,8 @@ internal sealed class LlmProviderConfiguration : IEntityTypeConfiguration<LlmPro
         builder.HasIndex(provider => provider.Slug)
             .IsUnique();
 
-        builder.HasIndex(provider => new { provider.SortOrder, provider.Name });
+        builder.HasIndex(provider => new { provider.IsFeatured, provider.Name })
+            .IsDescending(true, false);
 
         builder.HasMany(provider => provider.Models)
             .WithOne()

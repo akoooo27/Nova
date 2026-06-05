@@ -87,18 +87,10 @@ internal sealed class LlmModelConfiguration : IEntityTypeConfiguration<LlmModel>
             });
         });
 
-        builder.Property(model => model.SortOrder)
-            .HasConversion(
-                sortOrder => sortOrder.Value,
-                value => SortOrder.FromDatabase(value))
-            .IsRequired();
-
         builder.Property(model => model.IsEnabled)
             .IsRequired();
 
         builder.HasIndex(model => new { model.ProviderId, model.ExternalModelId })
             .IsUnique();
-
-        builder.HasIndex(model => new { model.ProviderId, model.SortOrder });
     }
 }

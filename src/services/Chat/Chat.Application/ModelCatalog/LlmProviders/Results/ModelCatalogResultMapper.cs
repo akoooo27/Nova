@@ -10,10 +10,11 @@ public static class ModelCatalogResultMapper
             Id: provider.Id.Value,
             Name: provider.Name.Value,
             Slug: provider.Slug.Value,
-            SortOrder: provider.SortOrder.Value,
+            IsFeatured: provider.IsFeatured,
             LogoKey: provider.LogoKey?.Value,
             Models: provider.Models
-                .OrderBy(model => model.SortOrder.Value)
+                .OrderBy(model => model.Profile.Name.Value)
+                .ThenBy(model => model.Id.Value)
                 .Select(model => model.ToResult())
                 .ToList()
             );
@@ -29,7 +30,6 @@ public static class ModelCatalogResultMapper
         SupportsVision: model.Profile.Capabilities.SupportsVision,
         SupportsReasoning: model.Profile.Capabilities.SupportsReasoning,
         SupportsToolCalling: model.Profile.Capabilities.SupportsToolCalling,
-        SortOrder: model.SortOrder.Value,
         IsEnabled: model.IsEnabled
     );
 }

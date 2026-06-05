@@ -16,7 +16,7 @@ internal static class ResponseMapper
         Id = provider.Id,
         Name = provider.Name,
         Slug = provider.Slug,
-        SortOrder = provider.SortOrder,
+        IsFeatured = provider.IsFeatured,
         LogoKey = provider.LogoKey,
         Models = provider.Models
             .Select(ToResponse)
@@ -33,7 +33,6 @@ internal static class ResponseMapper
         ContextWindow = model.ContextWindow,
         SupportsVision = model.SupportsVision,
         SupportsReasoning = model.SupportsReasoning,
-        SupportsToolCalling = model.SupportsToolCalling,
-        SortOrder = model.SortOrder
+        SupportsToolCalling = model.SupportsToolCalling
     };
 }

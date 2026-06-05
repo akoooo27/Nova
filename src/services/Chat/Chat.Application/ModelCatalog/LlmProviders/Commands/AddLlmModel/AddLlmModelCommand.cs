@@ -15,6 +15,5 @@ public sealed record AddLlmModelCommand
     int ContextWindow,
     bool SupportsVision,
     bool SupportsReasoning,
-    bool SupportsToolCalling,
-    int? SortOrder
+    bool SupportsToolCalling
 ) : ICommand<ErrorOr<LlmModelResult>>;

@@ -10,6 +10,6 @@ public sealed record CreateLlmProviderCommand
 (
     string Name,
     string Slug,
-    int? SortOrder,
+    bool IsFeatured,
     string? LogoKey
 ) : ICommand<ErrorOr<LlmProviderResult>>;

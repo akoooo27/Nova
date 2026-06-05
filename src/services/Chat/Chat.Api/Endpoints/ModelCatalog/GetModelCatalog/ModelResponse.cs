@@ -19,6 +19,4 @@ internal sealed class ModelResponse
     public required bool SupportsReasoning { get; init; }
 
     public required bool SupportsToolCalling { get; init; }
-
-    public required int SortOrder { get; init; }
 }

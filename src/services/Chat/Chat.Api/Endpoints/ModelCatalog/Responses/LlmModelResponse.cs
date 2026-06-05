@@ -20,7 +20,5 @@ internal sealed class LlmModelResponse
 
     public required bool SupportsToolCalling { get; init; }
 
-    public required int SortOrder { get; init; }
-
     public required bool IsEnabled { get; init; }
 }

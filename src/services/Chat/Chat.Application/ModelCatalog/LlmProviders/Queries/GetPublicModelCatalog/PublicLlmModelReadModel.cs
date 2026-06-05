@@ -10,6 +10,5 @@ public sealed record PublicLlmModelReadModel
     int ContextWindow,
     bool SupportsVision,
     bool SupportsReasoning,
-    bool SupportsToolCalling,
-    int SortOrder
+    bool SupportsToolCalling
 );

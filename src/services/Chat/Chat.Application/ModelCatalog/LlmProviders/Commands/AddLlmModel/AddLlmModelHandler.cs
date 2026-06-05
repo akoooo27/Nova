@@ -27,9 +27,6 @@ internal sealed class AddLlmModelHandler(ILlmProviderRepository providers, IUnit
             supportsReasoning: command.SupportsReasoning,
             supportsToolCalling: command.SupportsToolCalling
         );
-        ErrorOr<SortOrder> sortOrderResult = command.SortOrder is not null
-            ? SortOrder.Create(command.SortOrder.Value)
-            : SortOrder.First;
 
         List<Error> errors = [];
 
@@ -63,11 +60,6 @@ internal sealed class AddLlmModelHandler(ILlmProviderRepository providers, IUnit
             errors.AddRange(capabilitiesResult.Errors);
         }
 
-        if (sortOrderResult.IsError)
-        {
-            errors.AddRange(sortOrderResult.Errors);
-        }
-
         if (errors.Count > 0)
         {
             return errors;
@@ -88,12 +80,7 @@ internal sealed class AddLlmModelHandler(ILlmProviderRepository providers, IUnit
             capabilities: capabilitiesResult.Value
         );
 
-        ErrorOr<LlmModel> addModelResult = provider.AddModel
-        (
-            externalModelId: externalModelIdResult.Value,
-            profile: profile,
-            sortOrder: sortOrderResult.Value
-        );
+        ErrorOr<LlmModel> addModelResult = provider.AddModel(externalModelIdResult.Value, profile);
 
         if (addModelResult.IsError)
         {

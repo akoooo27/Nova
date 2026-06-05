@@ -8,7 +8,7 @@ internal sealed class LlmProviderResponse
 
     public required string Slug { get; init; }
 
-    public required int SortOrder { get; init; }
+    public required bool IsFeatured { get; init; }
 
     public string? LogoKey { get; init; }
 

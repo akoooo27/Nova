@@ -13,7 +13,7 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
                                    p.id as "Id",
                                    p.name as "Name",
                                    p.slug as "Slug",
-                                   p.sort_order as "SortOrder",
+                                   p.is_featured as "IsFeatured",
                                    p.logo_key as "LogoKey"
                                from llm_providers p
                                where exists (
@@ -22,7 +22,7 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
                                    where m.provider_id = p.id
                                      and m.is_enabled
                                )
-                               order by p.sort_order, p.name, p.id;
+                               order by p.is_featured desc, p.name, p.id;
 
                                select
                                    m.id as "Id",
@@ -33,11 +33,10 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
                                    m.context_window as "ContextWindow",
                                    m.supports_vision as "SupportsVision",
                                    m.supports_reasoning as "SupportsReasoning",
-                                   m.supports_tool_calling as "SupportsToolCalling",
-                                   m.sort_order as "SortOrder"
+                                   m.supports_tool_calling as "SupportsToolCalling"
                                from llm_models m
                                where m.is_enabled
-                               order by m.provider_id, m.sort_order, m.name, m.id;
+                               order by m.provider_id, m.name, m.id;
                                """;
 
     public async Task<PublicModelCatalogReadModel> GetAsync(CancellationToken cancellationToken)
@@ -60,7 +59,7 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
                 Id: provider.Id,
                 Name: provider.Name,
                 Slug: provider.Slug,
-                SortOrder: provider.SortOrder,
+                IsFeatured: provider.IsFeatured,
                 LogoKey: provider.LogoKey,
                 Models: modelsByProvider[provider.Id]
                     .Select(model => new PublicLlmModelReadModel
@@ -73,8 +72,7 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
                         ContextWindow: model.ContextWindow,
                         SupportsVision: model.SupportsVision,
                         SupportsReasoning: model.SupportsReasoning,
-                        SupportsToolCalling: model.SupportsToolCalling,
-                        SortOrder: model.SortOrder
+                        SupportsToolCalling: model.SupportsToolCalling
                     ))
                     .ToArray()
             ))
@@ -88,7 +86,7 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
         Guid Id,
         string Name,
         string Slug,
-        int SortOrder,
+        bool IsFeatured,
         string? LogoKey
     );
 
@@ -102,7 +100,6 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
         int ContextWindow,
         bool SupportsVision,
         bool SupportsReasoning,
-        bool SupportsToolCalling,
-        int SortOrder
+        bool SupportsToolCalling
     );
 }

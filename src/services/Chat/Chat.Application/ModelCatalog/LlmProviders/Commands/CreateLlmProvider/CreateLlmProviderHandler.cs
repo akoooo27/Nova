@@ -18,9 +18,6 @@ internal sealed class CreateLlmProviderHandler(ILlmProviderRepository providers,
     {
         ErrorOr<ProviderName> nameResult = ProviderName.Create(command.Name);
         ErrorOr<ProviderSlug> slugResult = ProviderSlug.Create(command.Slug);
-        ErrorOr<SortOrder> sortOrderResult = command.SortOrder is not null
-            ? SortOrder.Create(command.SortOrder.Value)
-            : SortOrder.First;
 
         List<Error> errors = [];
 
@@ -32,11 +29,6 @@ internal sealed class CreateLlmProviderHandler(ILlmProviderRepository providers,
         if (slugResult.IsError)
         {
             errors.AddRange(slugResult.Errors);
-        }
-
-        if (sortOrderResult.IsError)
-        {
-            errors.AddRange(sortOrderResult.Errors);
         }
 
         if (errors.Count > 0)
@@ -57,7 +49,7 @@ internal sealed class CreateLlmProviderHandler(ILlmProviderRepository providers,
         (
             name: nameResult.Value,
             slug: slug,
-            sortOrder: sortOrderResult.Value
+            isFeatured: command.IsFeatured
         );
 
         if (command.LogoKey is not null)

@@ -5,7 +5,7 @@ public sealed record LlmProviderResult
     Guid Id,
     string Name,
     string Slug,
-    int SortOrder,
+    bool IsFeatured,
     string? LogoKey,
     IReadOnlyCollection<LlmModelResult> Models
 );

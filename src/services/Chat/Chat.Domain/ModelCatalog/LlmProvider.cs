@@ -17,7 +17,7 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
 
     public ProviderSlug Slug { get; private set; }
 
-    public SortOrder SortOrder { get; private set; }
+    public bool IsFeatured { get; private set; }
 
     public AssetKey? LogoKey { get; private set; }
 
@@ -28,32 +28,31 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         LlmProviderId id,
         ProviderName name,
         ProviderSlug slug,
-        SortOrder sortOrder
+        bool isFeatured
     ) : base(id)
     {
         Name = name;
         Slug = slug;
-        SortOrder = sortOrder;
+        IsFeatured = isFeatured;
     }
 
     public static LlmProvider Create
     (
         ProviderName name,
         ProviderSlug slug,
-        SortOrder sortOrder
+        bool isFeatured
     ) => new
     (
         id: LlmProviderId.New(),
         name: name,
         slug: slug,
-        sortOrder: sortOrder
+        isFeatured: isFeatured
     );
 
     public ErrorOr<LlmModel> AddModel
     (
         ExternalModelId externalModelId,
-        LlmModelProfile profile,
-        SortOrder sortOrder
+        LlmModelProfile profile
     )
     {
         if (_models.Any(x => x.ExternalModelId == externalModelId))
@@ -65,8 +64,7 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         (
             providerId: Id,
             externalModelId: externalModelId,
-            profile: profile,
-            sortOrder: sortOrder
+            profile: profile
         );
 
         _models.Add(model);
@@ -87,20 +85,6 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         AddDomainEvent(new LlmModelProfileUpdated(Id, model.Id));
 
         return model;
-    }
-
-    public ErrorOr<Success> UpdateModelSortOrder(LlmModelId modelId, SortOrder sortOrder)
-    {
-        LlmModel? model = FindModel(modelId);
-
-        if (model is null)
-        {
-            return LlmProviderErrors.ModelNotFound(modelId);
-        }
-
-        model.UpdateSortOrder(sortOrder);
-
-        return Result.Success;
     }
 
     public ErrorOr<Success> EnableModel(LlmModelId modelId)
@@ -131,7 +115,26 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         return Result.Success;
     }
 
-    public void UpdateSortOrder(SortOrder sortOrder) => SortOrder = sortOrder;
+    public void UpdateDetails
+    (
+        ProviderName name,
+        ProviderSlug slug,
+        AssetKey? logoKey,
+        bool isFeatured
+    )
+    {
+        if (Name == name && Slug == slug && LogoKey == logoKey && IsFeatured == isFeatured)
+        {
+            return;
+        }
+
+        Name = name;
+        Slug = slug;
+        LogoKey = logoKey;
+        IsFeatured = isFeatured;
+
+        AddDomainEvent(new LlmProviderUpdated(Id));
+    }
 
     public void UpdateLogoKey(AssetKey logoKey) => LogoKey = logoKey;
 

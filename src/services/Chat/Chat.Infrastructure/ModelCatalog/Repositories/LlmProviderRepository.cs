@@ -21,6 +21,21 @@ internal sealed class LlmProviderRepository(ChatDbContext db) : ILlmProviderRepo
             .AnyAsync(x => x.Slug == slug, cancellationToken);
     }
 
+    public async Task<bool> ExistsBySlugAsync
+    (
+        ProviderSlug slug,
+        LlmProviderId excludedProviderId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await db.LlmProviders
+            .AnyAsync
+            (
+                provider => provider.Slug == slug && provider.Id != excludedProviderId,
+                cancellationToken
+            );
+    }
+
     public void Add(LlmProvider provider)
     {
         db.LlmProviders.Add(provider);

@@ -38,4 +38,9 @@ internal sealed class FakeLlmProviderRepository : ILlmProviderRepository
     {
         _providers.Add(provider);
     }
+
+    public Task<bool> ExistsBySlugAsync(ProviderSlug slug, LlmProviderId excludedProviderId, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }

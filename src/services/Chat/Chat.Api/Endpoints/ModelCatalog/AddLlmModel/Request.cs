@@ -15,6 +15,4 @@ internal sealed class Request
     public required bool SupportsReasoning { get; init; }
 
     public required bool SupportsToolCalling { get; init; }
-
-    public int? SortOrder { get; init; }
 }

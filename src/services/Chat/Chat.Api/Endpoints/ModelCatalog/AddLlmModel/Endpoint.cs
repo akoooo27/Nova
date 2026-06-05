@@ -50,8 +50,7 @@ internal sealed class Endpoint(ISender sender) : BaseEndpoint<Request, LlmModelR
             ContextWindow: req.ContextWindow,
             SupportsVision: req.SupportsVision,
             SupportsReasoning: req.SupportsReasoning,
-            SupportsToolCalling: req.SupportsToolCalling,
-            SortOrder: req.SortOrder
+            SupportsToolCalling: req.SupportsToolCalling
         );
 
         ErrorOr<LlmModelResult> result = await sender.Send(command, ct);

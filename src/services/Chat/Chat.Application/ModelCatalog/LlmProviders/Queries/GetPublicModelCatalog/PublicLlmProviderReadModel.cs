@@ -5,7 +5,7 @@ public sealed record PublicLlmProviderReadModel
     Guid Id,
     string Name,
     string Slug,
-    int SortOrder,
+    bool IsFeatured,
     string? LogoKey,
     IReadOnlyCollection<PublicLlmModelReadModel> Models
 );

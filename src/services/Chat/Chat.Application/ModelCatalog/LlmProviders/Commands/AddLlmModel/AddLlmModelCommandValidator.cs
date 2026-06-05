@@ -22,9 +22,5 @@ internal sealed class AddLlmModelCommandValidator : AbstractValidator<AddLlmMode
 
         RuleFor(x => x.ContextWindow)
             .GreaterThanOrEqualTo(1);
-
-        RuleFor(x => x.SortOrder)
-            .GreaterThanOrEqualTo(1)
-            .When(x => x.SortOrder is not null);
     }
 }

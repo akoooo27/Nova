@@ -9,7 +9,7 @@ internal static class ModelCatalogResponseMapper
         Id = provider.Id,
         Name = provider.Name,
         Slug = provider.Slug,
-        SortOrder = provider.SortOrder,
+        IsFeatured = provider.IsFeatured,
         LogoKey = provider.LogoKey,
         Models = provider.Models
             .Select(ToResponse)
@@ -27,7 +27,6 @@ internal static class ModelCatalogResponseMapper
         SupportsVision = model.SupportsVision,
         SupportsReasoning = model.SupportsReasoning,
         SupportsToolCalling = model.SupportsToolCalling,
-        SortOrder = model.SortOrder,
         IsEnabled = model.IsEnabled
     };
 }

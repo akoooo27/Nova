@@ -1,11 +1,14 @@
 using FluentValidation;
 
-namespace Chat.Application.ModelCatalog.LlmProviders.Commands.CreateLlmProvider;
+namespace Chat.Application.ModelCatalog.LlmProviders.Commands.UpdateLlmProvider;
 
-internal sealed class CreateLlmProviderCommandValidator : AbstractValidator<CreateLlmProviderCommand>
+internal sealed class UpdateLlmProviderCommandValidator : AbstractValidator<UpdateLlmProviderCommand>
 {
-    public CreateLlmProviderCommandValidator()
+    public UpdateLlmProviderCommandValidator()
     {
+        RuleFor(x => x.ProviderId)
+            .NotEmpty();
+
         RuleFor(x => x.Name)
             .NotEmpty()
             .MaximumLength(ModelCatalogLimits.ProviderNameMaxLength);
