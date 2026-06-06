@@ -15,6 +15,13 @@ internal sealed class LlmProviderRepository(ChatDbContext db) : ILlmProviderRepo
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public async Task<LlmProvider?> GetByModelIdAsync(LlmModelId id, CancellationToken cancellationToken = default)
+    {
+        return await db.LlmProviders
+            .Include(x => x.Models)
+            .FirstOrDefaultAsync(x => x.Models.Any(y => y.Id == id), cancellationToken);
+    }
+
     public async Task<bool> ExistsBySlugAsync(ProviderSlug slug, CancellationToken cancellationToken = default)
     {
         return await db.LlmProviders

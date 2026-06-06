@@ -140,6 +140,6 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
 
     public void RemoveLogoKey() => LogoKey = null;
 
-    private LlmModel? FindModel(LlmModelId modelId) =>
+    public LlmModel? FindModel(LlmModelId modelId) =>
         _models.FirstOrDefault(model => model.Id == modelId);
 }

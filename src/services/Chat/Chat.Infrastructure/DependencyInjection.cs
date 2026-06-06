@@ -1,8 +1,13 @@
 using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
+using Chat.Application.FavoriteModels.Queries;
+using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
 using Chat.Infrastructure.Database;
+using Chat.Infrastructure.FavoriteModels;
+using Chat.Infrastructure.FavoriteModels.Readers;
+using Chat.Infrastructure.FavoriteModels.Repositories;
 using Chat.Infrastructure.ModelCatalog.Caching;
 using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
@@ -45,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ChatDbContext>());
 
         services.AddScoped<ILlmProviderRepository, LlmProviderRepository>();
+        services.AddScoped<IFavoriteModelRepository, FavoriteModelRepository>();
 
         return services;
     }
@@ -84,6 +90,8 @@ public static class DependencyInjection
     {
         services.AddScoped<PublicModelCatalogDapperReader>();
         services.AddScoped<IPublicModelCatalogReader, CachedPublicModelCatalogReader>();
+
+        services.AddScoped<IFavoriteModelsReader, FavoriteModelsReader>();
 
         return services;
     }
