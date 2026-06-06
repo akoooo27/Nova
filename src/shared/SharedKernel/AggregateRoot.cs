@@ -3,7 +3,9 @@ namespace SharedKernel;
 public abstract class AggregateRoot<TId> : IAggregateRoot
     where TId : notnull
 {
-    public required TId Id { get; init; }
+    protected AggregateRoot(TId id) => Id = id;
+
+    public TId Id { get; }
 
     private readonly List<IDomainEvent> _domainEvents = [];
 
