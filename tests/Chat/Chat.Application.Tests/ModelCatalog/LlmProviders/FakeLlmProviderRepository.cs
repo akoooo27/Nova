@@ -54,6 +54,8 @@ internal sealed class FakeLlmProviderRepository : ILlmProviderRepository
 
     public Task<LlmProvider?> GetByModelIdAsync(LlmModelId id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        LlmProvider? provider = _providers.FirstOrDefault(x => x.FindModel(id) is not null);
+
+        return Task.FromResult(provider);
     }
 }

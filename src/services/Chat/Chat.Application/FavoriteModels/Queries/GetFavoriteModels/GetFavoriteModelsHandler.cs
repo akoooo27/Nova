@@ -6,7 +6,7 @@ using Mediator;
 
 using Shared.Application.Authentication;
 
-namespace Chat.Application.FavoriteModels.Queries;
+namespace Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 
 internal sealed class GetFavoriteModelsHandler(IUserContext userContext, IFavoriteModelsReader reader)
     : IQueryHandler<GetFavoriteModelsQuery, ErrorOr<FavoriteModelsReadModel>>

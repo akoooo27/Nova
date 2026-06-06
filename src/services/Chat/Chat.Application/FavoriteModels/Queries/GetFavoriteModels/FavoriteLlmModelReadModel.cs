@@ -1,4 +1,4 @@
-namespace Chat.Application.FavoriteModels.Queries;
+namespace Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 
 public sealed record FavoriteLlmModelReadModel
 (

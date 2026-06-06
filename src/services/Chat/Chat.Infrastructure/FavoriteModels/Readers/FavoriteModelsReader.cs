@@ -1,4 +1,5 @@
 using Chat.Application.FavoriteModels.Queries;
+using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Domain.Shared;
 
 using Dapper;

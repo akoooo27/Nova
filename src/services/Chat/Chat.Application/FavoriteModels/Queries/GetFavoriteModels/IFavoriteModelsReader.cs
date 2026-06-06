@@ -1,6 +1,6 @@
 using Chat.Domain.Shared;
 
-namespace Chat.Application.FavoriteModels.Queries;
+namespace Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 
 public interface IFavoriteModelsReader
 {
