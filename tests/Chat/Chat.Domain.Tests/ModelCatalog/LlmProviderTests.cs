@@ -225,6 +225,30 @@ public sealed class LlmProviderTests
         Assert.Null(provider.LogoKey);
     }
 
+    [Fact]
+    public void EnsureCanBeDeletedReturnsSuccessWhenProviderHasNoModels()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+
+        ErrorOr<Success> result = provider.EnsureCanBeDeleted();
+
+        Assert.False(result.IsError);
+    }
+
+    [Fact]
+    public void EnsureCanBeDeletedReturnsConflictWhenProviderHasModels()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        AddModel(provider);
+
+        ErrorOr<Success> result = provider.EnsureCanBeDeleted();
+
+        Assert.True(result.IsError);
+        Error error = Assert.Single(result.Errors);
+        Assert.Equal(ErrorType.Conflict, error.Type);
+        Assert.Equal("LlmProvider.CannotDeleteProviderWithModels", error.Code);
+    }
+
     private static LlmModel AddModel(LlmProvider provider)
     {
         ErrorOr<LlmModel> result = provider.AddModel

@@ -7,8 +7,11 @@ internal sealed class FakeLlmProviderRepository : ILlmProviderRepository
 {
     private readonly List<LlmProvider> _providers = [];
     private readonly HashSet<ProviderSlug> _existingSlugs = [];
+    private readonly List<LlmProvider> _removedProviders = [];
 
     public IReadOnlyCollection<LlmProvider> AddedProviders => _providers;
+
+    public IReadOnlyCollection<LlmProvider> RemovedProviders => _removedProviders;
 
     public void AddExistingSlug(ProviderSlug slug)
     {
@@ -50,6 +53,12 @@ internal sealed class FakeLlmProviderRepository : ILlmProviderRepository
     public void Add(LlmProvider provider)
     {
         _providers.Add(provider);
+    }
+
+    public void Remove(LlmProvider provider)
+    {
+        _removedProviders.Add(provider);
+        _providers.Remove(provider);
     }
 
     public Task<LlmProvider?> GetByModelIdAsync(LlmModelId id, CancellationToken cancellationToken = default)

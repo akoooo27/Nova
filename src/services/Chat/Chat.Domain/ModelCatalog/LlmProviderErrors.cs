@@ -17,4 +17,10 @@ public static class LlmProviderErrors
         code: "LlmProvider.ModelNotFound",
         description: $"Llm provider model with id '{modelId.Value}' was not found."
     );
+
+    public static Error CannotDeleteProviderWithModels(LlmProviderId providerId) => Error.Conflict
+    (
+        code: "LlmProvider.CannotDeleteProviderWithModels",
+        description: $"Provider '{providerId.Value}' cannot be deleted while it contains models."
+    );
 }
