@@ -136,11 +136,16 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         AddDomainEvent(new LlmProviderUpdated(Id));
     }
 
-    public ErrorOr<Success> EnsureCanBeDeleted()
+    public ErrorOr<Success> RemoveFromCatalog()
     {
-        return _models.Count > 0
-            ? LlmProviderErrors.CannotDeleteProviderWithModels(Id)
-            : Result.Success;
+        if (_models.Count > 0)
+        {
+            return LlmProviderErrors.CannotDeleteProviderWithModels(Id);
+        }
+
+        AddDomainEvent(new LlmProviderDeleted(Id));
+
+        return Result.Success;
     }
 
     public void UpdateLogoKey(AssetKey logoKey) => LogoKey = logoKey;

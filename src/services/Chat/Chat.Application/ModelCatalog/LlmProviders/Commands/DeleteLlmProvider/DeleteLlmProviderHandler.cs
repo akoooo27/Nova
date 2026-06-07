@@ -30,11 +30,11 @@ internal sealed class DeleteLlmProviderHandler(ILlmProviderRepository providers,
             return LlmProviderOperationErrors.ProviderNotFound(providerId);
         }
 
-        ErrorOr<Success> deleteResult = provider.EnsureCanBeDeleted();
+        ErrorOr<Success> removeFromCatalogResult = provider.RemoveFromCatalog();
 
-        if (deleteResult.IsError)
+        if (removeFromCatalogResult.IsError)
         {
-            return deleteResult.Errors;
+            return removeFromCatalogResult.Errors;
         }
 
         providers.Remove(provider);

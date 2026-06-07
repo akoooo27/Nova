@@ -1,6 +1,7 @@
 using Chat.Application.ModelCatalog.LlmProviders.Commands.DeleteLlmProvider;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Entities;
+using Chat.Domain.ModelCatalog.Events;
 
 using ErrorOr;
 
@@ -23,6 +24,8 @@ public sealed class DeleteLlmProviderHandlerTests
         Assert.False(result.IsError);
         Assert.Same(provider, Assert.Single(providers.RemovedProviders));
         Assert.Empty(providers.AddedProviders);
+        LlmProviderDeleted domainEvent = Assert.IsType<LlmProviderDeleted>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
         Assert.Equal(1, unitOfWork.SaveChangesCallCount);
     }
 
@@ -45,6 +48,7 @@ public sealed class DeleteLlmProviderHandlerTests
         Assert.Equal("LlmProvider.CannotDeleteProviderWithModels", error.Code);
         Assert.Empty(providers.RemovedProviders);
         Assert.Same(provider, Assert.Single(providers.AddedProviders));
+        Assert.Empty(provider.DomainEvents);
         Assert.Equal(0, unitOfWork.SaveChangesCallCount);
     }
 

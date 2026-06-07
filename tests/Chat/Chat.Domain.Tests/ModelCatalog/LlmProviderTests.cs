@@ -226,27 +226,30 @@ public sealed class LlmProviderTests
     }
 
     [Fact]
-    public void EnsureCanBeDeletedReturnsSuccessWhenProviderHasNoModels()
+    public void RemoveFromCatalogReturnsSuccessAndRaisesDeletedEventWhenProviderHasNoModels()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
 
-        ErrorOr<Success> result = provider.EnsureCanBeDeleted();
+        ErrorOr<Success> result = provider.RemoveFromCatalog();
 
         Assert.False(result.IsError);
+        LlmProviderDeleted domainEvent = Assert.IsType<LlmProviderDeleted>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
     }
 
     [Fact]
-    public void EnsureCanBeDeletedReturnsConflictWhenProviderHasModels()
+    public void RemoveFromCatalogReturnsConflictWithoutRaisingEventWhenProviderHasModels()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();
         AddModel(provider);
 
-        ErrorOr<Success> result = provider.EnsureCanBeDeleted();
+        ErrorOr<Success> result = provider.RemoveFromCatalog();
 
         Assert.True(result.IsError);
         Error error = Assert.Single(result.Errors);
         Assert.Equal(ErrorType.Conflict, error.Type);
         Assert.Equal("LlmProvider.CannotDeleteProviderWithModels", error.Code);
+        Assert.Empty(provider.DomainEvents);
     }
 
     private static LlmModel AddModel(LlmProvider provider)
