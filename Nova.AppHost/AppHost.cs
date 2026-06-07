@@ -4,7 +4,8 @@ IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(ar
 
 IResourceBuilder<ParameterResource> redisPassword = builder.AddParameter("redis-password", secret: true);
 
-IResourceBuilder<RedisResource> redis = builder.AddRedis("redis", password: redisPassword);
+IResourceBuilder<RedisResource> redis = builder.AddRedis("redis", password: redisPassword)
+    .WithHostPort(6379);
 
 IResourceBuilder<ParameterResource> postgresUser = builder.AddParameter("postgres-user", secret: true);
 IResourceBuilder<ParameterResource> postgresPassword = builder.AddParameter("postgres-password", secret: true);
@@ -51,8 +52,10 @@ IResourceBuilder<ProjectResource> bff = builder.AddProject<Projects.BFF>("bff")
     .WithEnvironment("Auth0__ClientId", auth0ClientId)
     .WithEnvironment("Auth0__ClientSecret", auth0ClientSecret)
     .WithReference(bffDb)
+    .WithReference(redis)
     .WithReference(rabbitMq)
     .WaitFor(bffDb)
+    .WaitFor(redis)
     .WaitFor(rabbitMq)
     .WaitForCompletion(bffMigrations);
 

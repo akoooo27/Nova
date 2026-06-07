@@ -10,14 +10,19 @@ using Duende.Bff.Yarp;
 
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.DataProtection.StackExchangeRedis;
 using Microsoft.Extensions.Options;
 
 using Shared.Infrastructure.Options;
+
+using StackExchange.Redis;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddNpgsqlDbContext<BffSessionDbContext>("bff-db");
+builder.AddRedisClient("redis");
 
 builder.Services.AddOptions<Auth0Options>()
     .BindConfiguration(Auth0Options.SectionName)
@@ -90,6 +95,17 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+builder.Services
+    .AddOptions<KeyManagementOptions>()
+    .Configure<IConnectionMultiplexer>((options, connectionMultiplexer) =>
+    {
+        options.XmlRepository = new RedisXmlRepository
+        (
+            databaseFactory: () => connectionMultiplexer.GetDatabase(),
+            key: "Nova:BFF:DataProtection-Keys"
+        );
+    });
 
 builder.Services.AddDataProtection()
     .SetApplicationName("BFF");
