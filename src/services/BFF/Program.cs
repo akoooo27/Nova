@@ -1,10 +1,12 @@
 using BFF.Database;
 using BFF.FrontendProxy;
 using BFF.RemoteApis;
+using BFF.Security;
 
 using Duende.Bff;
 using Duende.Bff.Builder;
 using Duende.Bff.DynamicFrontends;
+using Duende.Bff.Endpoints;
 using Duende.Bff.EntityFramework;
 using Duende.Bff.Yarp;
 
@@ -42,6 +44,8 @@ builder.Services.AddBff(options =>
         options.Cookie.Name = "__Nova-bff";
         options.Cookie.SameSite = SameSiteMode.Strict;
     });
+
+builder.Services.AddTransient<IUserEndpointClaimsEnricher, PermissionsClaimsEnricher>();
 
 builder.Services
     .AddReverseProxy()

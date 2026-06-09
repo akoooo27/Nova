@@ -9,16 +9,16 @@
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
 
     <!-- Aspire -->
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.2" />
-    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.2" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.2" />
-    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.2" />
-    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.2" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.3" />
+    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.3" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.3" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.3" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.3" />
 
-    <PackageVersion Include="Aspire.Npgsql" Version="13.4.2" />
-    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.2" />
-    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.2" />
-    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.2" />
+    <PackageVersion Include="Aspire.Npgsql" Version="13.4.3" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.3" />
+    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.3" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.3" />
 
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.6.0" />
@@ -63,7 +63,7 @@
     <PackageVersion Include="Duende.BFF" Version="4.1.2" />
     <PackageVersion Include="Duende.BFF.EntityFramework" Version="4.1.2" />
     <PackageVersion Include="Duende.BFF.Yarp" Version="4.1.2" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.8" />
     
     <PackageVersion Include="FastEndpoints" Version="8.1.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="8.1.0" />
