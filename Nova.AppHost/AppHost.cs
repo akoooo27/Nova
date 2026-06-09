@@ -15,7 +15,7 @@ IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgre
     .WithDataVolume();
 
 IResourceBuilder<PostgresDatabaseResource> bffDb = postgres.AddDatabase("bff-db");
-IResourceBuilder<PostgresDatabaseResource> chatDb = postgres.AddDatabase("chat-db");
+IResourceBuilder<IResourceWithConnectionString> chatDb = builder.AddConnectionString("chat-db");
 IResourceBuilder<PostgresDatabaseResource> identityIngressDb = postgres.AddDatabase("identity-ingress-db");
 
 IResourceBuilder<ParameterResource> rabbitMqUser = builder.AddParameter("rabbitmq-user", secret: true);
@@ -29,8 +29,7 @@ IResourceBuilder<ProjectResource> bffMigrations = builder.AddProject<Projects.BF
     .WaitFor(bffDb);
 
 IResourceBuilder<ProjectResource> chatMigrations = builder.AddProject<Projects.Chat_MigrationWorker>("chat-migrations")
-    .WithReference(chatDb)
-    .WaitFor(chatDb);
+    .WithReference(chatDb);
 
 IResourceBuilder<ProjectResource> identityIngressMigrations = builder
     .AddProject<Projects.IdentityIngress_MigrationWorker>("identity-ingress-migrations")
@@ -87,7 +86,6 @@ IResourceBuilder<ProjectResource> chatApi = builder.AddProject<Projects.Chat_Api
     .WithReference(chatDb)
     .WithReference(rabbitMq)
     .WaitFor(redis)
-    .WaitFor(chatDb)
     .WaitFor(rabbitMq)
     .WaitForCompletion(chatMigrations);
 
