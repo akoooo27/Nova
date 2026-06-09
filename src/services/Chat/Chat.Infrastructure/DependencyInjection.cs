@@ -2,6 +2,7 @@ using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Application.FavoriteModels.Queries;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
+using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
@@ -95,6 +96,8 @@ public static class DependencyInjection
     {
         services.AddScoped<PublicModelCatalogDapperReader>();
         services.AddScoped<IPublicModelCatalogReader, CachedPublicModelCatalogReader>();
+
+        services.AddScoped<IManagedModelCatalogReader, ManagedModelCatalogDapperReader>();
 
         services.AddScoped<IFavoriteModelsReader, FavoriteModelsReader>();
 
