@@ -3,9 +3,11 @@ using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Application.FavoriteModels.Queries;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
+using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
+using Chat.Infrastructure.Chats.Repositories;
 using Chat.Infrastructure.Database;
 using Chat.Infrastructure.FavoriteModels;
 using Chat.Infrastructure.FavoriteModels.Readers;
@@ -53,6 +55,7 @@ public static class DependencyInjection
 
         services.AddScoped<ILlmProviderRepository, LlmProviderRepository>();
         services.AddScoped<IFavoriteModelRepository, FavoriteModelRepository>();
+        services.AddScoped<IChatRepository, ChatRepository>();
 
         return services;
     }

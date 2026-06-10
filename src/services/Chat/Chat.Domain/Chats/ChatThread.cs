@@ -11,19 +11,25 @@ namespace Chat.Domain.Chats;
 
 public sealed class ChatThread : AggregateRoot<ChatId>
 {
-    private readonly List<ChatMessage> _messages;
+    private readonly List<ChatMessage> _messages = [];
 
-    public UserId UserId { get; private set; }
+    public UserId UserId { get; private set; } = default!;
 
-    public ChatTitle Title { get; private set; }
+    public ChatTitle Title { get; private set; } = default!;
 
-    public ChatMessageId CurrentMessageId { get; private set; }
+    public ChatMessageId CurrentMessageId { get; private set; } = default!;
 
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
     public IReadOnlyCollection<ChatMessage> Messages => _messages;
+
+    private ChatThread()
+    {
+        // EF Core materialization only
+    }
+
 
     private ChatThread
     (

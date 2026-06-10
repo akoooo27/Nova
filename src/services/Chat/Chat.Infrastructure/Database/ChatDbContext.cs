@@ -1,4 +1,5 @@
 using Chat.Application.Abstractions.Database;
+using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
 using Chat.Infrastructure.Users.Models;
@@ -23,6 +24,8 @@ public sealed class ChatDbContext(
     internal DbSet<UserReadModel> Users => Set<UserReadModel>();
 
     public DbSet<FavoriteModel> FavoriteModels => Set<FavoriteModel>();
+
+    public DbSet<ChatThread> ChatThreads => Set<ChatThread>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
