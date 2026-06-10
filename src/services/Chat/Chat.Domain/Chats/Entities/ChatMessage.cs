@@ -76,7 +76,7 @@ public sealed class ChatMessage : Entity<ChatMessageId>
         llmModelId: null,
         status: MessageStatus.Completed,
         createdAt: createdAt,
-        completedAt: null,
+        completedAt: createdAt,
         siblingIndex: siblingIndex
     );
 
