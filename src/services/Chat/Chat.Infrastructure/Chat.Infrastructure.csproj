@@ -20,6 +20,8 @@
     
     <PackageReference Include="MassTransit.RabbitMQ" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    
+    <PackageReference Include="AWSSDK.S3" />
   </ItemGroup>
 
   <ItemGroup>

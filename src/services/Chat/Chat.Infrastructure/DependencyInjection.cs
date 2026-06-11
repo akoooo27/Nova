@@ -1,6 +1,8 @@
+using Amazon.S3;
+
 using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
-using Chat.Application.FavoriteModels.Queries;
+using Chat.Application.Abstractions.ProviderLogos;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
 using Chat.Domain.Chats;
@@ -9,12 +11,13 @@ using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
 using Chat.Infrastructure.Chats.Repositories;
 using Chat.Infrastructure.Database;
-using Chat.Infrastructure.FavoriteModels;
 using Chat.Infrastructure.FavoriteModels.Readers;
 using Chat.Infrastructure.FavoriteModels.Repositories;
 using Chat.Infrastructure.ModelCatalog.Caching;
 using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
+using Chat.Infrastructure.Options;
+using Chat.Infrastructure.ProviderLogos;
 using Chat.Infrastructure.Users.Consumers;
 
 using MassTransit;
@@ -45,7 +48,8 @@ public static class DependencyInjection
             .AddDatabaseServices()
             .AddCacheServices(configuration)
             .AddReaders()
-            .AddMessagingServices(configuration);
+            .AddMessagingServices(configuration)
+            .AddProviderLogoStorage(configuration);
 
     private static IServiceCollection AddDatabaseServices(this IServiceCollection services)
     {
@@ -147,6 +151,22 @@ public static class DependencyInjection
                 rabbitMqConfigurator.ConfigureEndpoints(context);
             });
         });
+
+        return services;
+    }
+
+    private static IServiceCollection AddProviderLogoStorage(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services
+            .AddOptions<ProviderLogoStorageOptions>()
+            .Bind(configuration.GetSection(ProviderLogoStorageOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client());
+
+        services.AddScoped<IProviderLogoStorage, S3ProviderLogoStorage>();
 
         return services;
     }

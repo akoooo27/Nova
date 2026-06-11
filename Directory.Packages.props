@@ -59,6 +59,7 @@
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.4.1" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
 
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.24.3" />
     <!-- Api -->
     <PackageVersion Include="Duende.BFF" Version="4.1.2" />
     <PackageVersion Include="Duende.BFF.EntityFramework" Version="4.1.2" />
