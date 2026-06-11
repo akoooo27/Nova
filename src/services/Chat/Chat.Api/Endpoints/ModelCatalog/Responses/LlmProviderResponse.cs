@@ -10,6 +10,8 @@ internal sealed class LlmProviderResponse
 
     public required bool IsFeatured { get; init; }
 
+    public required bool IsEnabled { get; init; }
+
     public string? LogoKey { get; init; }
 
     public required IReadOnlyCollection<LlmModelResponse> Models { get; init; }

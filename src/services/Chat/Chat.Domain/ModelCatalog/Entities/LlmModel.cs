@@ -48,9 +48,29 @@ public sealed class LlmModel : Entity<LlmModelId>
         isEnabled: true
     );
 
-    internal void Enable() => IsEnabled = true;
+    internal bool Enable()
+    {
+        if (IsEnabled)
+        {
+            return false;
+        }
 
-    internal void Disable() => IsEnabled = false;
+        IsEnabled = true;
+
+        return true;
+    }
+
+    internal bool Disable()
+    {
+        if (!IsEnabled)
+        {
+            return false;
+        }
+
+        IsEnabled = false;
+
+        return true;
+    }
 
     internal void UpdateProfile(LlmModelProfile profile) => Profile = profile;
 }

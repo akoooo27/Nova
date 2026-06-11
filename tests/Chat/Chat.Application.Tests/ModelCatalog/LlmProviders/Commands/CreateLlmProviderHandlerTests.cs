@@ -30,6 +30,7 @@ public sealed class CreateLlmProviderHandlerTests
         Assert.Equal(command.Name, provider.Name);
         Assert.Equal(command.Slug, provider.Slug);
         Assert.Equal(command.IsFeatured, provider.IsFeatured);
+        Assert.True(provider.IsEnabled);
         Assert.Equal(command.LogoKey, provider.LogoKey);
         Assert.Empty(provider.Models);
         Assert.Single(providers.AddedProviders);

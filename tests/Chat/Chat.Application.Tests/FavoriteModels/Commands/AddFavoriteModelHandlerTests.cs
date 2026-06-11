@@ -146,6 +146,38 @@ public sealed class AddFavoriteModelHandlerTests
         Assert.Equal(0, unitOfWork.SaveChangesCallCount);
     }
 
+    [Fact]
+    public async Task HandleReturnsConflictWhenProviderIsDisabled()
+    {
+        UserId userId = UserId.FromDatabase("auth0|user-1");
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        LlmModel model = AddModel(provider);
+        provider.Disable();
+        FakeLlmProviderRepository providers = new();
+        providers.AddExistingProvider(provider);
+        FakeUnitOfWork unitOfWork = new();
+        AddFavoriteModelHandler handler = new
+        (
+            userContext: new FakeUserContext(userId.Value),
+            favoriteModels: new FakeFavoriteModelRepository(),
+            llmProviders: providers,
+            unitOfWork: unitOfWork,
+            dateTimeProvider: new FakeDateTimeProvider(UtcNow)
+        );
+
+        ErrorOr<FavoriteModelResult> result = await handler.Handle
+        (
+            new AddFavoriteModelCommand(model.Id.Value),
+            CancellationToken.None
+        );
+
+        Assert.True(result.IsError);
+        Error error = Assert.Single(result.Errors);
+        Assert.Equal(ErrorType.Conflict, error.Type);
+        Assert.Equal("FavoriteModel.LlmModelDisabled", error.Code);
+        Assert.Equal(0, unitOfWork.SaveChangesCallCount);
+    }
+
     private static LlmModel AddModel(LlmProvider provider)
     {
         ErrorOr<LlmModel> result = provider.AddModel

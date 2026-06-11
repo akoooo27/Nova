@@ -15,6 +15,7 @@ internal sealed class ManagedModelCatalogDapperReader(NpgsqlDataSource dataSourc
                                    p.name as "Name",
                                    p.slug as "Slug",
                                    p.is_featured as "IsFeatured",
+                                   p.is_enabled as "IsEnabled",
                                    p.logo_key as "LogoKey"
                                from llm_providers p
                                order by p.is_featured desc, p.name, p.id;
@@ -55,6 +56,7 @@ internal sealed class ManagedModelCatalogDapperReader(NpgsqlDataSource dataSourc
                 Name: provider.Name,
                 Slug: provider.Slug,
                 IsFeatured: provider.IsFeatured,
+                IsEnabled: provider.IsEnabled,
                 LogoKey: provider.LogoKey,
                 Models: modelsByProvider[provider.Id]
                     .Select(model => new ManagedLlmModelReadModel
@@ -83,6 +85,7 @@ internal sealed class ManagedModelCatalogDapperReader(NpgsqlDataSource dataSourc
         string Name,
         string Slug,
         bool IsFeatured,
+        bool IsEnabled,
         string? LogoKey
     );
 

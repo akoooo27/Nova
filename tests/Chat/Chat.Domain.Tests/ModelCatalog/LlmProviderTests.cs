@@ -27,6 +27,7 @@ public sealed class LlmProviderTests
         Assert.Equal(name, provider.Name);
         Assert.Equal(slug, provider.Slug);
         Assert.True(provider.IsFeatured);
+        Assert.True(provider.IsEnabled);
         Assert.Null(provider.LogoKey);
         Assert.Empty(provider.Models);
     }
@@ -172,6 +173,61 @@ public sealed class LlmProviderTests
         Error error = Assert.Single(result.Errors);
         Assert.Equal(ErrorType.NotFound, error.Type);
         Assert.Equal("LlmProvider.ModelNotFound", error.Code);
+    }
+
+    [Fact]
+    public void RemoveModelRemovesExistingModelAndAddsDomainEvent()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        LlmModel model = AddModel(provider);
+
+        ErrorOr<Success> result = provider.RemoveModel(model.Id);
+
+        Assert.False(result.IsError);
+        Assert.Empty(provider.Models);
+        LlmModelRemoved domainEvent = Assert.IsType<LlmModelRemoved>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
+        Assert.Equal(model.Id, domainEvent.ModelId);
+    }
+
+    [Fact]
+    public void RemoveModelReturnsNotFoundWhenModelDoesNotExist()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+
+        ErrorOr<Success> result = provider.RemoveModel(LlmModelId.New());
+
+        Assert.True(result.IsError);
+        Error error = Assert.Single(result.Errors);
+        Assert.Equal(ErrorType.NotFound, error.Type);
+        Assert.Equal("LlmProvider.ModelNotFound", error.Code);
+        Assert.Empty(provider.DomainEvents);
+    }
+
+    [Fact]
+    public void DisableProviderMarksProviderDisabledAndAddsDomainEvent()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+
+        provider.Disable();
+
+        Assert.False(provider.IsEnabled);
+        LlmProviderUpdated domainEvent = Assert.IsType<LlmProviderUpdated>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
+    }
+
+    [Fact]
+    public void EnableProviderMarksProviderEnabledAndAddsDomainEvent()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        provider.Disable();
+        provider.ClearDomainEvents();
+
+        provider.Enable();
+
+        Assert.True(provider.IsEnabled);
+        LlmProviderUpdated domainEvent = Assert.IsType<LlmProviderUpdated>(Assert.Single(provider.DomainEvents));
+        Assert.Equal(provider.Id, domainEvent.ProviderId);
     }
 
     [Fact]

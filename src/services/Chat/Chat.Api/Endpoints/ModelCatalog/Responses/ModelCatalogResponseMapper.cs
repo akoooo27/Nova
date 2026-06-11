@@ -10,6 +10,7 @@ internal static class ModelCatalogResponseMapper
         Name = provider.Name,
         Slug = provider.Slug,
         IsFeatured = provider.IsFeatured,
+        IsEnabled = provider.IsEnabled,
         LogoKey = provider.LogoKey,
         Models = provider.Models
             .Select(ToResponse)

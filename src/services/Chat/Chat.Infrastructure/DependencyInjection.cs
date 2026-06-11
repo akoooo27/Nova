@@ -85,6 +85,14 @@ public static class DependencyInjection
                 LlmModelProfileUpdatedCacheHandler>();
 
         services
+            .AddScoped<INotificationHandler<DomainEventNotification<LlmModelAvailabilityChanged>>,
+                LlmModelAvailabilityChangedCacheHandler>();
+
+        services
+            .AddScoped<INotificationHandler<DomainEventNotification<LlmModelRemoved>>,
+                LlmModelRemovedCacheHandler>();
+
+        services
             .AddScoped<INotificationHandler<DomainEventNotification<LlmProviderUpdated>>,
                 LlmProviderUpdatedCacheHandler>();
 

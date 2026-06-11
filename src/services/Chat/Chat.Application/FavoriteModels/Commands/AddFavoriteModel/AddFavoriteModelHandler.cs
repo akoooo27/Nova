@@ -68,6 +68,11 @@ internal sealed class AddFavoriteModelHandler(
             return FavoriteModelOperationErrors.LlmModelNotFound(modelId);
         }
 
+        if (!llmProvider.IsEnabled)
+        {
+            return FavoriteModelOperationErrors.LlmModelDisabled(modelId);
+        }
+
         LlmModel? llmModel = llmProvider.FindModel(modelId);
 
         if (llmModel is null)

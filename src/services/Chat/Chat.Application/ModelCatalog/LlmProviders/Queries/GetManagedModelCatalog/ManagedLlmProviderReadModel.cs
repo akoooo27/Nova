@@ -6,6 +6,7 @@ public sealed record ManagedLlmProviderReadModel
     string Name,
     string Slug,
     bool IsFeatured,
+    bool IsEnabled,
     string? LogoKey,
     IReadOnlyCollection<ManagedLlmModelReadModel> Models
 );

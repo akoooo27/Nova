@@ -23,6 +23,7 @@ public sealed class ModelCatalogResultMapperTests
         LlmProviderResult result = provider.ToResult();
 
         Assert.True(result.IsFeatured);
+        Assert.True(result.IsEnabled);
         Assert.Equal(["Alpha", "Zulu"], result.Models.Select(model => model.Name));
     }
 }

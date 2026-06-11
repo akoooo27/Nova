@@ -16,12 +16,13 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
                                    p.is_featured as "IsFeatured",
                                    p.logo_key as "LogoKey"
                                from llm_providers p
-                               where exists (
-                                   select 1
-                                   from llm_models m
-                                   where m.provider_id = p.id
-                                     and m.is_enabled
-                               )
+                               where p.is_enabled
+                                 and exists (
+                                     select 1
+                                     from llm_models m
+                                     where m.provider_id = p.id
+                                       and m.is_enabled
+                                 )
                                order by p.is_featured desc, p.name, p.id;
 
                                select
@@ -35,7 +36,9 @@ internal sealed class PublicModelCatalogDapperReader(NpgsqlDataSource dataSource
                                    m.supports_reasoning as "SupportsReasoning",
                                    m.supports_tool_calling as "SupportsToolCalling"
                                from llm_models m
-                               where m.is_enabled
+                               inner join llm_providers p on p.id = m.provider_id
+                               where p.is_enabled
+                                 and m.is_enabled
                                order by m.provider_id, m.name, m.id;
                                """;
 

@@ -20,7 +20,7 @@ internal sealed class FavoriteModelsReader(NpgsqlDataSource dataSource) : IFavor
                                     m.supports_vision as "SupportsVision",
                                     m.supports_reasoning as "SupportsReasoning",
                                     m.supports_tool_calling as "SupportsToolCalling",
-                                    m.is_enabled as "IsEnabled",
+                                    (m.is_enabled and p.is_enabled) as "IsEnabled",
                                     p.id as "ProviderId",
                                     p.name as "ProviderName",
                                     p.slug as "ProviderSlug",
