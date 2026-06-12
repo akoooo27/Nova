@@ -70,4 +70,12 @@ public static class ChatErrors
             code: "Chat.CannotRegenerateWhileGenerating",
             description: $"Message '{messageId.Value}' is still generating and cannot be regenerated yet."
         );
+
+    public static Error ParentStillGenerating(ChatMessageId parentMessageId) =>
+        Error.Conflict
+        (
+            code: "Chat.ParentStillGenerating",
+            description:
+            $"Message '{parentMessageId.Value}' is still generating; wait for the turn to finish before replying."
+        );
 }

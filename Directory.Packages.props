@@ -19,7 +19,10 @@
     <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.3" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.3" />
     <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.3" />
-
+    
+    <!-- Forced to include due to high severity security issue of pinned one -->
+    <PackageVersion Include="MessagePack" Version="3.1.7" />
+    
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.7.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.7.0" />
 

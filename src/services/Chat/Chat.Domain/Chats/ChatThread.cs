@@ -103,6 +103,11 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             return ChatErrors.UserParentMustBeAssistant(parentMessageId);
         }
 
+        if (parent.Status == MessageStatus.Generating)
+        {
+            return ChatErrors.ParentStillGenerating(parentMessageId);
+        }
+
         ChatMessage message = ChatMessage.CreateUserMessage
         (
             chatId: Id,
@@ -122,7 +127,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
     public ErrorOr<ChatMessage> BeginAssistantMessage
     (
         ChatMessageId parentMessageId,
-        LlmModelId? llmModelId,
+        LlmModelId llmModelId,
         DateTimeOffset createdAt
     )
     {

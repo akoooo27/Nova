@@ -93,7 +93,7 @@ public sealed class ChatThreadTests
     public void AddUserMessageAddsUserMessageUnderAssistantParentAndMovesHead()
     {
         ChatThread chat = TestChatFactory.CreateThread();
-        ChatMessage assistant = BeginAssistant(chat);
+        ChatMessage assistant = CompleteAssistant(chat);
         MessageContent content = TestChatFactory.CreateContent("Follow up");
         DateTimeOffset createdAt = TestChatFactory.CreatedAt.AddMinutes(2);
 
@@ -113,6 +113,22 @@ public sealed class ChatThreadTests
         Assert.Equal(0, message.SiblingIndex.Value);
         Assert.Equal(message.Id, chat.CurrentMessageId);
         Assert.Equal(createdAt, chat.UpdatedAt);
+    }
+
+    [Fact]
+    public void AddUserMessageReturnsParentStillGeneratingWhenParentAssistantIsGenerating()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage assistant = BeginAssistant(chat);
+
+        ErrorOr<ChatMessage> result = chat.AddUserMessage
+        (
+            parentMessageId: assistant.Id,
+            content: TestChatFactory.CreateContent("Too eager"),
+            createdAt: TestChatFactory.CreatedAt.AddMinutes(2)
+        );
+
+        AssertError(result, ErrorType.Conflict, "Chat.ParentStillGenerating");
     }
 
     [Fact]
@@ -152,8 +168,8 @@ public sealed class ChatThreadTests
         ChatThread chat = TestChatFactory.CreateThread();
         ChatMessage root = TestChatFactory.RootMessage(chat);
 
-        ChatMessage firstAssistant = BeginAssistant(chat, root.Id, TestChatFactory.CreatedAt.AddMinutes(1));
-        ChatMessage secondAssistant = BeginAssistant(chat, root.Id, TestChatFactory.CreatedAt.AddMinutes(2));
+        ChatMessage firstAssistant = CompleteAssistant(chat, root.Id, TestChatFactory.CreatedAt.AddMinutes(1));
+        ChatMessage secondAssistant = CompleteAssistant(chat, root.Id, TestChatFactory.CreatedAt.AddMinutes(2));
         ChatMessage firstUser = AddUser(chat, firstAssistant.Id, TestChatFactory.CreatedAt.AddMinutes(3));
         ChatMessage secondUser = AddUser(chat, firstAssistant.Id, TestChatFactory.CreatedAt.AddMinutes(4));
 
@@ -267,7 +283,7 @@ public sealed class ChatThreadTests
     public void EditUserMessageCreatesUserSiblingWithoutMutatingOriginalAndMovesHead()
     {
         ChatThread chat = TestChatFactory.CreateThread();
-        ChatMessage assistant = BeginAssistant(chat);
+        ChatMessage assistant = CompleteAssistant(chat);
         ChatMessage original = AddUser(chat, assistant.Id, TestChatFactory.CreatedAt.AddMinutes(2), "Original");
         MessageContent editedContent = TestChatFactory.CreateContent("Edited");
         DateTimeOffset editedAt = TestChatFactory.CreatedAt.AddMinutes(3);
@@ -520,14 +536,19 @@ public sealed class ChatThreadTests
         return result.Value;
     }
 
-    private static ChatMessage CompleteAssistant(ChatThread chat)
+    private static ChatMessage CompleteAssistant
+    (
+        ChatThread chat,
+        ChatMessageId? parentMessageId = null,
+        DateTimeOffset? createdAt = null
+    )
     {
-        ChatMessage assistant = BeginAssistant(chat);
+        ChatMessage assistant = BeginAssistant(chat, parentMessageId, createdAt);
         ErrorOr<ChatMessage> result = chat.CompleteAssistantMessage
         (
             messageId: assistant.Id,
             content: TestChatFactory.CreateContent("Assistant reply"),
-            completedAt: TestChatFactory.CreatedAt.AddMinutes(2)
+            completedAt: (createdAt ?? TestChatFactory.CreatedAt.AddMinutes(1)).AddMinutes(1)
         );
 
         Assert.False(result.IsError);

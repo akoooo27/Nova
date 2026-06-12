@@ -84,7 +84,7 @@ public sealed class ChatMessage : Entity<ChatMessageId>
     (
         ChatId chatId,
         ChatMessageId parentMessageId,
-        LlmModelId? llmModelId,
+        LlmModelId llmModelId,
         DateTimeOffset createdAt,
         SiblingIndex siblingIndex
     ) => new
