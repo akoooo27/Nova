@@ -4,5 +4,5 @@ namespace Chat.Application.Abstractions.Turns;
 
 public interface IMemoryRetriever
 {
-    Task<RetrievedMemories> Retriever(TurnRequested job, CancellationToken cancellationToken);
+    Task<RetrievedMemories> RetrieveAsync(TurnRequested job, CancellationToken cancellationToken);
 }

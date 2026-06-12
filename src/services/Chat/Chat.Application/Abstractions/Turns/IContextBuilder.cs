@@ -7,9 +7,9 @@ namespace Chat.Application.Abstractions.Turns;
 
 public interface IContextBuilder
 {
-    Task<ErrorOr<TurnContext>> BuildContext
+    Task<ErrorOr<TurnContext>> BuildAsync
     (
-        ChatThread chat,
+        ChatThread thread,
         ChatMessage assistantMessage,
         RetrievedMemories memories,
         CancellationToken cancellationToken
