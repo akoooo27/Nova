@@ -63,6 +63,11 @@
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
 
     <PackageVersion Include="AWSSDK.S3" Version="4.0.24.3" />
+    
+    <PackageVersion Include="Microsoft.Agents.AI" Version="1.10.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.OpenAI" Version="1.10.0" />
+    
+    <PackageVersion Include="PostHog.AspNetCore" Version="2.6.3" />
     <!-- Api -->
     <PackageVersion Include="Duende.BFF" Version="4.2.0" />
     <PackageVersion Include="Duende.BFF.EntityFramework" Version="4.2.0" />

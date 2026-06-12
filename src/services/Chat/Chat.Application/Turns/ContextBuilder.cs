@@ -10,7 +10,7 @@ using ErrorOr;
 
 namespace Chat.Application.Turns;
 
-internal sealed class ContextBuilder(ILlmProviderRepository providers) : IContextBuilder
+public sealed class ContextBuilder(ILlmProviderRepository providers) : IContextBuilder
 {
     private const string DefaultSystemPrompt = "You are Nova, a helpful AI assistant.";
 

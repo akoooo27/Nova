@@ -1,14 +1,19 @@
 using Amazon.S3;
 
+using Chat.Application.Abstractions.Analytics;
 using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Application.Abstractions.ProviderLogos;
+using Chat.Application.Abstractions.Turns;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
+using Chat.Application.Turns;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
+using Chat.Infrastructure.Agents;
+using Chat.Infrastructure.Analytics;
 using Chat.Infrastructure.Chats.Repositories;
 using Chat.Infrastructure.Database;
 using Chat.Infrastructure.FavoriteModels.Readers;
@@ -18,6 +23,8 @@ using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
 using Chat.Infrastructure.Options;
 using Chat.Infrastructure.ProviderLogos;
+using Chat.Infrastructure.Turns;
+using Chat.Infrastructure.Turns.Consumers;
 using Chat.Infrastructure.Users.Consumers;
 
 using MassTransit;
@@ -27,6 +34,8 @@ using Mediator;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using PostHog;
+
 using Shared.Application.Messaging;
 using Shared.Infrastructure;
 using Shared.Infrastructure.DomainEvents;
@@ -35,6 +44,8 @@ using Shared.Infrastructure.Messaging;
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
 using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
+
+using PostHogSdkOptions = PostHog.PostHogOptions;
 
 namespace Chat.Infrastructure;
 
@@ -49,7 +60,19 @@ public static class DependencyInjection
             .AddCacheServices(configuration)
             .AddReaders()
             .AddMessagingServices(configuration)
+            .AddTurnStreamReading()
             .AddProviderLogoStorage(configuration);
+
+    public static IServiceCollection AddTurnWorkerInfrastructure
+    (
+        this IServiceCollection services,
+        IConfiguration configuration
+    ) =>
+        services
+            .AddSharedInfrastructure()
+            .AddDatabaseServices()
+            .AddTurnPipeline(configuration)
+            .AddTurnWorkerMessaging(configuration);
 
     private static IServiceCollection AddDatabaseServices(this IServiceCollection services)
     {
@@ -167,6 +190,101 @@ public static class DependencyInjection
         services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client());
 
         services.AddScoped<IProviderLogoStorage, S3ProviderLogoStorage>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddTurnStreamReading(this IServiceCollection services)
+    {
+        services.AddSingleton<ITurnStreamReader, RedisTurnStreamReader>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddTurnPipeline(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<AgentOptions>()
+            .Bind(configuration.GetSection(AgentOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddScoped<ChatTurnOrchestrator>();
+        services.AddScoped<IContextBuilder, ContextBuilder>();
+        services.AddSingleton<IMemoryRetriever, NoOpMemoryRetriever>();
+        services.AddSingleton<ITokenPublisher, RedisStreamTokenPublisher>();
+
+        // Decorator stack (spec Rule 3): remove this registration and AddAnalytics
+        // to delete PostHog without changing the turn pipeline.
+        services.AddScoped<AgentFrameworkRunner>();
+        services.AddScoped<IAgentRunner>(sp => new TelemetryAgentRunner
+        (
+            inner: sp.GetRequiredService<AgentFrameworkRunner>(),
+            analytics: sp.GetRequiredService<IAnalytics>()
+        ));
+
+        AddAnalytics(services, configuration);
+
+        return services;
+    }
+
+    private static void AddAnalytics(IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<PostHogAnalyticsOptions>()
+            .Bind(configuration.GetSection(PostHogAnalyticsOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        PostHogAnalyticsOptions options = configuration
+            .GetSection(PostHogAnalyticsOptions.SectionName)
+            .Get<PostHogAnalyticsOptions>() ?? new PostHogAnalyticsOptions();
+
+        if (string.IsNullOrWhiteSpace(options.ProjectApiKey))
+        {
+            services.AddSingleton<IAnalytics, NullAnalytics>();
+            return;
+        }
+
+        services.AddSingleton<IPostHogClient>(_ => new PostHogClient(new PostHogSdkOptions
+        {
+            ProjectToken = options.ProjectApiKey,
+            HostUrl = options.HostUrl
+        }));
+
+        services.AddSingleton<IAnalytics, PostHogAnalytics>();
+    }
+
+    private static IServiceCollection AddTurnWorkerMessaging(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<IMessageBus, MessageBus>();
+
+        services.AddMassTransit(configurator =>
+        {
+            configurator.SetKebabCaseEndpointNameFormatter();
+
+            configurator.AddConsumer<TurnRequestedConsumer, TurnRequestedConsumerDefinition>();
+
+            configurator.AddEntityFrameworkOutbox<ChatDbContext>(outbox =>
+            {
+                outbox.UsePostgres();
+                outbox.UseBusOutbox();
+            });
+
+            configurator.AddConfigureEndpointsCallback((context, _, endpointConfigurator) =>
+            {
+                endpointConfigurator.UseEntityFrameworkOutbox<ChatDbContext>(context);
+            });
+
+            configurator.UsingRabbitMq((context, rabbitMqConfigurator) =>
+            {
+                string rabbitMqConnectionString = configuration.GetConnectionString("rabbitmq")
+                    ?? throw new InvalidOperationException("Connection string 'rabbitmq' is required.");
+
+                rabbitMqConfigurator.Host(new Uri(rabbitMqConnectionString));
+                rabbitMqConfigurator.ConfigureEndpoints(context);
+            });
+        });
 
         return services;
     }

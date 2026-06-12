@@ -18,6 +18,7 @@
     <Project Path="src/services/Chat/Chat.Application/Chat.Application.csproj" />
     <Project Path="src/services/Chat/Chat.Domain/Chat.Domain.csproj" />
     <Project Path="src/services/Chat/Chat.Infrastructure/Chat.Infrastructure.csproj" />
+    <Project Path="src/services/Chat/Chat.TurnWorker/Chat.TurnWorker.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Chat/">
