@@ -19,8 +19,9 @@ namespace Chat.Infrastructure.Agents;
 internal sealed class AgentFrameworkRunner : IAgentRunner
 {
     private readonly OpenAIClient _client;
+    private readonly IReadOnlyList<IAgentTool> _tools;
 
-    public AgentFrameworkRunner(IOptions<AgentOptions> options)
+    public AgentFrameworkRunner(IOptions<AgentOptions> options, IEnumerable<IAgentTool> tools)
     {
         AgentOptions value = options.Value;
 
@@ -29,6 +30,8 @@ internal sealed class AgentFrameworkRunner : IAgentRunner
             new ApiKeyCredential(value.ApiKey),
             new OpenAIClientOptions { Endpoint = new Uri(value.BaseUrl.ToString()) }
         );
+
+        _tools = tools.ToList();
     }
 
     public async IAsyncEnumerable<TurnEvent> RunAsync
@@ -37,9 +40,17 @@ internal sealed class AgentFrameworkRunner : IAgentRunner
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        IList<AITool> tools = _tools
+            .Select(tool => (AITool)AIFunctionFactory.Create
+            (
+                method: tool.CreateInvocation(),
+                new AIFunctionFactoryOptions { Name = tool.Name }
+            ))
+            .ToList();
+
         AIAgent agent = _client
             .GetChatClient(context.ExternalModelId)
-            .AsAIAgent(instructions: context.SystemPrompt);
+            .AsAIAgent(instructions: context.SystemPrompt, tools: tools);
 
         List<AIChatMessage> messages = context.Messages
             .Select(message => new AIChatMessage

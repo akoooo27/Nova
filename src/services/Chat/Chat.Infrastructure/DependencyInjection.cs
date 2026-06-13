@@ -5,9 +5,11 @@ using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Application.Abstractions.ProviderLogos;
 using Chat.Application.Abstractions.Turns;
+using Chat.Application.Abstractions.WebSearch;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
 using Chat.Application.Turns;
+using Chat.Application.Turns.Tools;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
@@ -26,6 +28,7 @@ using Chat.Infrastructure.ProviderLogos;
 using Chat.Infrastructure.Turns;
 using Chat.Infrastructure.Turns.Consumers;
 using Chat.Infrastructure.Users.Consumers;
+using Chat.Infrastructure.WebSearch;
 
 using MassTransit;
 
@@ -33,6 +36,7 @@ using Mediator;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using PostHog;
 
@@ -209,10 +213,27 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services
+            .AddOptions<ExaOptions>()
+            .Bind(configuration.GetSection(ExaOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddScoped<ChatTurnOrchestrator>();
         services.AddScoped<IContextBuilder, ContextBuilder>();
         services.AddSingleton<IMemoryRetriever, NoOpMemoryRetriever>();
         services.AddSingleton<ITokenPublisher, RedisStreamTokenPublisher>();
+        services.AddScoped<IAgentTool, WebSearchTool>();
+
+        services
+            .AddHttpClient<IWebSearchClient, ExaWebSearchClient>((serviceProvider, httpClient) =>
+            {
+                ExaOptions options = serviceProvider.GetRequiredService<IOptions<ExaOptions>>().Value;
+
+                httpClient.BaseAddress = options.BaseUrl;
+                httpClient.DefaultRequestHeaders.Add("x-api-key", options.ApiKey);
+            })
+            .AddStandardResilienceHandler();
 
         // Decorator stack (spec Rule 3): remove this registration and AddAnalytics
         // to delete PostHog without changing the turn pipeline.
