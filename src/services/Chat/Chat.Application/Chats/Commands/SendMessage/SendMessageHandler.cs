@@ -91,7 +91,7 @@ internal sealed class SendMessageHandler(
             return ChatOperationErrors.ChatNotFound(chatId);
         }
 
-        DateTimeOffset now = dateTimeProvider.Now;
+        DateTimeOffset now = dateTimeProvider.UtcNow;
 
         ErrorOr<ChatMessage> userMessageResult = thread.AddUserMessage
         (
