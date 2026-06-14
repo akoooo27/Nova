@@ -13,7 +13,8 @@ internal static class ModelUsability
     (
         ILlmProviderRepository providers,
         LlmModelId modelId,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        bool requiresToolCalling = false
     )
     {
         LlmProvider? provider = await providers.GetByModelIdAsync(modelId, cancellationToken);
@@ -33,6 +34,11 @@ internal static class ModelUsability
         if (!provider.IsEnabled || !model.IsEnabled)
         {
             return ChatOperationErrors.LlmModelDisabled(modelId);
+        }
+
+        if (requiresToolCalling && !model.Profile.Capabilities.SupportsToolCalling)
+        {
+            return ChatOperationErrors.LlmModelDoesNotSupportToolCalling(modelId);
         }
 
         return Result.Success;

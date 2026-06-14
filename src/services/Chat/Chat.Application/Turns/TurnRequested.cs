@@ -1,8 +1,10 @@
+using Chat.Application.Abstractions.Turns;
+
 namespace Chat.Application.Turns;
 
-public sealed record TurnRequested
-(
+public sealed record TurnRequested(
     Guid ChatId,
     string UserId,
-    Guid AssistantMessageId
+    Guid AssistantMessageId,
+    TurnGenerationOptions? Options = null
 );

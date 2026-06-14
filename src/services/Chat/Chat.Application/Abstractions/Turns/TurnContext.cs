@@ -17,5 +17,6 @@ public sealed record TurnContext
     string UserId,
     string ExternalModelId,
     string SystemPrompt,
+    TurnGenerationOptions GenerationOptions,
     IReadOnlyList<TurnMessage> Messages
 );

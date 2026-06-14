@@ -27,4 +27,11 @@ public static class ChatOperationErrors
             code: "Chat.LlmModelDisabled",
             description: $"LLM model '{modelId.Value}' is disabled."
         );
+
+    public static Error LlmModelDoesNotSupportToolCalling(LlmModelId modelId) =>
+        Error.Conflict
+        (
+            code: "Chat.LlmModelDoesNotSupportToolCalling",
+            description: $"LLM model '{modelId.Value}' does not support tool calling."
+        );
 }

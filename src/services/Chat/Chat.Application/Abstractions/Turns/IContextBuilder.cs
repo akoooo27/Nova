@@ -12,6 +12,7 @@ public interface IContextBuilder
         ChatThread thread,
         ChatMessage assistantMessage,
         RetrievedMemories memories,
+        TurnGenerationOptions generationOptions,
         CancellationToken cancellationToken
     );
 }

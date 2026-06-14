@@ -13,7 +13,8 @@ public sealed class TurnEventSerializerTests
         { new ToolResultEvent(TurnId, "search", "3 results"), "tool_result" },
         { new UsageEvent(TurnId, "gpt-4.1", 120, 45), "usage" },
         { new DoneEvent(TurnId), "done" },
-        { new FailedEvent(TurnId, "provider timeout"), "failed" }
+        { new FailedEvent(TurnId, "provider timeout"), "failed" },
+        { new ReasoningEvent(TurnId, "The model is thinking through the problem."), "reasoning" }
     };
 
     [Theory]

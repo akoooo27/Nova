@@ -1,4 +1,5 @@
 using Chat.Application.Abstractions.Database;
+using Chat.Application.Abstractions.Turns;
 using Chat.Application.Chats.Results;
 using Chat.Application.Turns;
 using Chat.Domain.Chats;
@@ -58,12 +59,14 @@ internal sealed class CreateChatHandler(
         UserId userId = userIdResult.Value;
         MessageContent content = contentResult.Value;
         LlmModelId modelId = modelIdResult.Value;
+        TurnGenerationOptions generationOptions = command.GenerationOptions ?? TurnGenerationOptions.Default;
 
         ErrorOr<Success> usabilityResult = await ModelUsability.EnsureUsableAsync
         (
             providers: providers,
             modelId: modelId,
-            cancellationToken: cancellationToken
+            cancellationToken: cancellationToken,
+            requiresToolCalling: generationOptions.ForceUseSearch
         );
 
         if (usabilityResult.IsError)
@@ -115,7 +118,8 @@ internal sealed class CreateChatHandler(
         (
             ChatId: thread.Id.Value,
             UserId: userId.Value,
-            AssistantMessageId: assistantMessageId.Value
+            AssistantMessageId: assistantMessageId.Value,
+            Options: generationOptions
         );
 
         // Published BEFORE SaveChangesAsync on purpose: the MassTransit bus outbox buffers

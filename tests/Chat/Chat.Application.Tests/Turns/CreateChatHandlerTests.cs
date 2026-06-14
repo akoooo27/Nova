@@ -1,3 +1,4 @@
+using Chat.Application.Abstractions.Turns;
 using Chat.Application.Chats.Commands.CreateChat;
 using Chat.Application.Chats.Results;
 using Chat.Application.Tests.FavoriteModels;
@@ -75,6 +76,26 @@ public sealed class CreateChatHandlerTests
         Assert.Equal("auth0|user-1", turnRequested.UserId);
         Assert.Equal(result.Value.AssistantMessageId, turnRequested.AssistantMessageId);
         Assert.Equal(1, _unitOfWork.SaveCount);
+    }
+
+    [Fact]
+    public async Task HandlePublishesForcedSearchOptionWhenRequested()
+    {
+        LlmModel model = SeedModel();
+
+        ErrorOr<TurnStartedResult> result = await CreateHandler()
+            .Handle(new CreateChatCommand
+            (
+                Message: "Who won MVP?",
+                LlmModelId: model.Id.Value,
+                GenerationOptions: new TurnGenerationOptions(ForceUseSearch: true)
+            ), CancellationToken.None);
+
+        Assert.False(result.IsError);
+
+        TurnRequested turnRequested = Assert.IsType<TurnRequested>(Assert.Single(_messageBus.Published));
+        Assert.NotNull(turnRequested.Options);
+        Assert.True(turnRequested.Options.ForceUseSearch);
     }
 
     [Fact]

@@ -19,6 +19,7 @@ public sealed class ContextBuilder(ILlmProviderRepository providers) : IContextB
         ChatThread thread,
         ChatMessage assistantMessage,
         RetrievedMemories memories,
+        TurnGenerationOptions generationOptions,
         CancellationToken cancellationToken
     )
     {
@@ -74,6 +75,7 @@ public sealed class ContextBuilder(ILlmProviderRepository providers) : IContextB
             UserId: thread.UserId.Value,
             ExternalModelId: model.ExternalModelId.Value,
             SystemPrompt: DefaultSystemPrompt,
+            GenerationOptions: generationOptions,
             Messages: history
         );
     }

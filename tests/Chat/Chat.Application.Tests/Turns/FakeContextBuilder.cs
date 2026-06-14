@@ -13,9 +13,13 @@ internal sealed class FakeContextBuilder : IContextBuilder
         ChatThread thread,
         ChatMessage assistantMessage,
         RetrievedMemories memories,
+        TurnGenerationOptions generationOptions,
         CancellationToken cancellationToken
     )
     {
+        _ = memories;
+        _ = cancellationToken;
+
         TurnContext context = new
         (
             TurnId: assistantMessage.Id.Value,
@@ -23,6 +27,7 @@ internal sealed class FakeContextBuilder : IContextBuilder
             UserId: thread.UserId.Value,
             ExternalModelId: "gpt-4.1",
             SystemPrompt: "test",
+            GenerationOptions: generationOptions,
             Messages: [new TurnMessage(TurnRole.User, "Hello")]
         );
 

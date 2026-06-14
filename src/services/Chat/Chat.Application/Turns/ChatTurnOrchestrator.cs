@@ -79,6 +79,7 @@ public sealed partial class ChatTurnOrchestrator(
             thread: thread,
             assistantMessage: assistantMessage,
             memories: memories,
+            generationOptions: job.Options ?? TurnGenerationOptions.Default,
             cancellationToken: cancellationToken
         );
 

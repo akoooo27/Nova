@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 
 using Chat.Application.Abstractions.Turns;
 using Chat.Application.Turns;
+using Chat.Application.Turns.Tools;
 using Chat.Infrastructure.Options;
 
 using Microsoft.Agents.AI;
@@ -40,6 +41,8 @@ internal sealed class AgentFrameworkRunner : IAgentRunner
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        // The tools are ALWAYS exposed. Whether the model is free to
+        // decide, or required to call it, is controlled below via ToolMode.
         IList<AITool> tools = _tools
             .Select(tool => (AITool)AIFunctionFactory.Create
             (
@@ -62,7 +65,17 @@ internal sealed class AgentFrameworkRunner : IAgentRunner
             ))
             .ToList();
 
-        await foreach (AgentResponseUpdate update in agent.RunStreamingAsync(messages, cancellationToken: cancellationToken))
+        ChatOptions chatOptions = new()
+        {
+            ToolMode = SelectToolMode(context.GenerationOptions)
+        };
+
+        ChatClientAgentRunOptions runOptions = new()
+        {
+            ChatOptions = chatOptions,
+        };
+
+        await foreach (AgentResponseUpdate update in agent.RunStreamingAsync(messages: messages, options: runOptions, cancellationToken: cancellationToken))
         {
             foreach (TurnEvent turnEvent in TurnEventMapper.Map(turnId: context.TurnId, modelId: context.ExternalModelId, update: update)
             )
@@ -70,5 +83,12 @@ internal sealed class AgentFrameworkRunner : IAgentRunner
                 yield return turnEvent;
             }
         }
+    }
+
+    private static ChatToolMode SelectToolMode(TurnGenerationOptions options)
+    {
+        return options.ForceUseSearch
+            ? ChatToolMode.RequireSpecific(AgentToolNames.WebSearch)
+            : ChatToolMode.Auto;
     }
 }

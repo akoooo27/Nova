@@ -24,6 +24,7 @@ public sealed class ContextBuilderTests
     public async Task BuildAsyncProducesChronologicalHistoryEndingAtTheUserMessage()
     {
         (ChatThread thread, ChatMessage assistant, _) = CreateThreadWithPendingTurn();
+        TurnGenerationOptions options = new(ForceUseSearch: true);
 
         ContextBuilder builder = new(_providers);
 
@@ -32,6 +33,7 @@ public sealed class ContextBuilderTests
             thread: thread,
             assistantMessage: assistant,
             memories: RetrievedMemories.Empty,
+            generationOptions: options,
             cancellationToken: CancellationToken.None
         );
 
@@ -41,6 +43,7 @@ public sealed class ContextBuilderTests
         Assert.Equal(thread.UserId.Value, context.Value.UserId);
         Assert.Equal("gpt-4.1", context.Value.ExternalModelId);
         Assert.Equal("You are Nova, a helpful AI assistant.", context.Value.SystemPrompt);
+        Assert.Same(options, context.Value.GenerationOptions);
 
         TurnMessage message = Assert.Single(context.Value.Messages);
         Assert.Equal(TurnRole.User, message.Role);
@@ -59,6 +62,7 @@ public sealed class ContextBuilderTests
             thread: thread,
             assistantMessage: assistant,
             memories: RetrievedMemories.Empty,
+            generationOptions: TurnGenerationOptions.Default,
             cancellationToken: CancellationToken.None
         );
 

@@ -67,6 +67,17 @@ internal static class TurnEventMapper
                     yield return usageEvent;
 
                     break;
+
+                case TextReasoningContent reasoning when !string.IsNullOrWhiteSpace(reasoning.Text):
+                    ReasoningEvent reasoningEvent = new
+                    (
+                        TurnId: turnId,
+                        Text: reasoning.Text
+                    );
+
+                    yield return reasoningEvent;
+
+                    break;
             }
         }
     }

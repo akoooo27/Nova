@@ -1,4 +1,5 @@
 using Chat.Api.Endpoints.Chats.Responses;
+using Chat.Application.Abstractions.Turns;
 using Chat.Application.Chats.Commands.SendMessage;
 using Chat.Application.Chats.Results;
 
@@ -12,7 +13,12 @@ using Shared.Api.Infrastructure;
 
 namespace Chat.Api.Endpoints.Chats.SendMessage;
 
-internal sealed record Request(string Message, Guid ModelId);
+internal sealed record Request
+(
+    string Message,
+    Guid ModelId,
+    bool ForceUseSearch = false
+);
 
 internal sealed class Endpoint(ISender sender) : Endpoint<Request>
 {
@@ -41,7 +47,13 @@ internal sealed class Endpoint(ISender sender) : Endpoint<Request>
 
     public override async Task HandleAsync(Request request, CancellationToken ct)
     {
-        SendMessageCommand command = new(Route<Guid>("chatId"), request.Message, request.ModelId);
+        SendMessageCommand command = new
+        (
+            ChatId: Route<Guid>("chatId"),
+            Message: request.Message,
+            LlmModelId: request.ModelId,
+            GenerationOptions: new TurnGenerationOptions(ForceUseSearch: request.ForceUseSearch)
+        );
 
         ErrorOr<TurnStartedResult> result = await sender.Send(command, ct);
 
