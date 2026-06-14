@@ -11,5 +11,6 @@ public sealed record CreateChatCommand
 (
     string Message,
     Guid LlmModelId,
-    TurnGenerationOptions? GenerationOptions = null
+    TurnGenerationOptions? GenerationOptions = null,
+    bool IsTemporary = false
 ) : ICommand<ErrorOr<TurnStartedResult>>;

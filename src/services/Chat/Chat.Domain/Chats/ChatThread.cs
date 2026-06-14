@@ -23,6 +23,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    public bool IsTemporary { get; private set; }
+
     public IReadOnlyCollection<ChatMessage> Messages => _messages;
 
     private ChatThread()
@@ -38,7 +40,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         ChatTitle title,
         ChatMessage root,
         DateTimeOffset createdAt,
-        DateTimeOffset updatedAt
+        DateTimeOffset updatedAt,
+        bool isTemporary
     ) : base(id)
     {
         UserId = userId;
@@ -46,6 +49,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         CurrentMessageId = root.Id;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
+        IsTemporary = isTemporary;
         _messages = [root];
     }
 
@@ -54,7 +58,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         UserId userId,
         ChatTitle title,
         MessageContent firstUserMessage,
-        DateTimeOffset createdAt
+        DateTimeOffset createdAt,
+        bool isTemporary = false
     )
     {
         ChatId id = ChatId.New();
@@ -75,7 +80,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             title: title,
             root: root,
             createdAt: createdAt,
-            updatedAt: createdAt
+            updatedAt: createdAt,
+            isTemporary: isTemporary
         );
     }
 

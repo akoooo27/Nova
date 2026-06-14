@@ -93,7 +93,8 @@ internal sealed class CreateChatHandler(
             userId: userId,
             title: title,
             firstUserMessage: content,
-            createdAt: now
+            createdAt: now,
+            isTemporary: command.IsTemporary
         );
 
         ChatMessageId userMessageId = thread.CurrentMessageId;

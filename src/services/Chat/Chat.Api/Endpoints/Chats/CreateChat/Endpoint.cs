@@ -17,7 +17,9 @@ internal sealed record Request
 (
     string Message,
     Guid ModelId,
-    bool ForceUseSearch = false
+    bool ForceUseSearch = false,
+    [property: QueryParam, BindFrom("temporary-chat")]
+    bool IsTemporary = false
 );
 
 internal sealed class Endpoint(ISender sender) : Endpoint<Request>
@@ -51,7 +53,8 @@ internal sealed class Endpoint(ISender sender) : Endpoint<Request>
         (
             Message: request.Message,
             LlmModelId: request.ModelId,
-            GenerationOptions: new TurnGenerationOptions(ForceUseSearch: request.ForceUseSearch)
+            GenerationOptions: new TurnGenerationOptions(ForceUseSearch: request.ForceUseSearch),
+            IsTemporary: request.IsTemporary
         );
 
         ErrorOr<TurnStartedResult> result = await sender.Send(command, ct);

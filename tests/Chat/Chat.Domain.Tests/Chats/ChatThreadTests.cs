@@ -33,6 +33,22 @@ public sealed class ChatThreadTests
     }
 
     [Fact]
+    public void CreateDefaultsToNonTemporary()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+
+        Assert.False(chat.IsTemporary);
+    }
+
+    [Fact]
+    public void CreateMarksThreadTemporaryWhenRequested()
+    {
+        ChatThread chat = TestChatFactory.CreateThread(isTemporary: true);
+
+        Assert.True(chat.IsTemporary);
+    }
+
+    [Fact]
     public void BeginAssistantMessageAddsGeneratingAssistantUnderUserParentAndMovesHead()
     {
         ChatThread chat = TestChatFactory.CreateThread();

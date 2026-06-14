@@ -60,20 +60,19 @@ public class TelemetryAgentRunner(IAgentRunner inner, IAnalytics analytics) : IA
             properties
         );
 
-        foreach (string tool in tools)
+        if (tools.Count > 0)
         {
-            Dictionary<string, object> toolProperties = new()
-            {
-                ["tool"] = tool,
-                ["model"] = usage?.Model ?? context.ExternalModelId,
-                ["conversation_id"] = context.ChatId.ToString()
-            };
-
             analytics.Capture
             (
                 distinctId: context.UserId,
                 eventName: ToolUsedEventName,
-                properties: toolProperties
+                properties: new Dictionary<string, object>
+                {
+                    ["tools"] = tools, // PostHog breaks down by array elements
+                    ["model"] = usage?.Model ?? context.ExternalModelId,
+                    ["conversation_id"] = context.ChatId.ToString(),
+                    ["$ai_trace_id"] = context.TurnId.ToString()
+                }
             );
         }
     }

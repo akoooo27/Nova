@@ -9,14 +9,15 @@ internal static class TestChatFactory
 {
     public static readonly DateTimeOffset CreatedAt = new(2026, 6, 9, 10, 0, 0, TimeSpan.Zero);
 
-    public static ChatThread CreateThread()
+    public static ChatThread CreateThread(bool isTemporary = false)
     {
         return ChatThread.Create
         (
             userId: CreateUserId(),
             title: CreateTitle(),
             firstUserMessage: CreateContent("Hello"),
-            createdAt: CreatedAt
+            createdAt: CreatedAt,
+            isTemporary: isTemporary
         );
     }
 

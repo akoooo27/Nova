@@ -99,6 +99,39 @@ public sealed class CreateChatHandlerTests
     }
 
     [Fact]
+    public async Task HandlePersistsTemporaryThreadWhenRequested()
+    {
+        LlmModel model = SeedModel();
+
+        ErrorOr<TurnStartedResult> result = await CreateHandler()
+            .Handle(new CreateChatCommand
+            (
+                Message: "Off the record",
+                LlmModelId: model.Id.Value,
+                IsTemporary: true
+            ), CancellationToken.None);
+
+        Assert.False(result.IsError);
+
+        ChatThread thread = Assert.Single(_chats.Threads);
+        Assert.True(thread.IsTemporary);
+    }
+
+    [Fact]
+    public async Task HandleDefaultsToNonTemporaryThread()
+    {
+        LlmModel model = SeedModel();
+
+        ErrorOr<TurnStartedResult> result = await CreateHandler()
+            .Handle(new CreateChatCommand("On the record", model.Id.Value), CancellationToken.None);
+
+        Assert.False(result.IsError);
+
+        ChatThread thread = Assert.Single(_chats.Threads);
+        Assert.False(thread.IsTemporary);
+    }
+
+    [Fact]
     public async Task HandleReturnsLlmModelNotFoundWhenModelUnknown()
     {
         ErrorOr<TurnStartedResult> result = await CreateHandler()
