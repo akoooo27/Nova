@@ -54,8 +54,15 @@ internal sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThr
         builder.Property(x => x.UpdatedAt)
             .IsRequired();
 
+        builder.Property(x => x.PinnedAt);
+
         builder.Property(x => x.IsTemporary)
             .IsRequired();
+
+        builder.Property(x => x.IsArchived)
+            .IsRequired();
+
+        builder.Ignore(x => x.IsPinned);
 
         builder.Property<uint>("xmin")
             .IsRowVersion();

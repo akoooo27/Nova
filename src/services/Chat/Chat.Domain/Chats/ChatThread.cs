@@ -23,7 +23,13 @@ public sealed class ChatThread : AggregateRoot<ChatId>
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    public DateTimeOffset? PinnedAt { get; private set; }
+
     public bool IsTemporary { get; private set; }
+
+    public bool IsArchived { get; private set; }
+
+    public bool IsPinned => PinnedAt is not null;
 
     public IReadOnlyCollection<ChatMessage> Messages => _messages;
 
@@ -313,6 +319,18 @@ public sealed class ChatThread : AggregateRoot<ChatId>
 
         return Result.Success;
     }
+
+    public void Pin(DateTimeOffset pinnedAt) =>
+        PinnedAt ??= pinnedAt;
+
+    public void Unpin() =>
+        PinnedAt = null;
+
+    public void Archive() =>
+        IsArchived = true;
+
+    public void Unarchive() =>
+        IsArchived = false;
 
     public ChatMessage? FindMessage(ChatMessageId messageId) =>
         _messages.SingleOrDefault(message => message.Id == messageId);

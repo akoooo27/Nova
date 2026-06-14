@@ -502,6 +502,87 @@ public sealed class ChatThreadTests
     }
 
     [Fact]
+    public void CreateDefaultsToUnpinnedAndUnarchived()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+
+        Assert.Null(chat.PinnedAt);
+        Assert.False(chat.IsPinned);
+        Assert.False(chat.IsArchived);
+    }
+
+    [Fact]
+    public void PinStoresPinnedTimestampAndMarksThreadPinned()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        DateTimeOffset pinnedAt = TestChatFactory.CreatedAt.AddMinutes(5);
+
+        chat.Pin(pinnedAt);
+
+        Assert.Equal(pinnedAt, chat.PinnedAt);
+        Assert.True(chat.IsPinned);
+    }
+
+    [Fact]
+    public void PinKeepsOriginalPinnedTimestampWhenAlreadyPinned()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        DateTimeOffset firstPinnedAt = TestChatFactory.CreatedAt.AddMinutes(5);
+        DateTimeOffset secondPinnedAt = TestChatFactory.CreatedAt.AddMinutes(10);
+
+        chat.Pin(firstPinnedAt);
+        chat.Pin(secondPinnedAt);
+
+        Assert.Equal(firstPinnedAt, chat.PinnedAt);
+    }
+
+    [Fact]
+    public void UnpinClearsPinnedTimestampAndMarksThreadUnpinned()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+
+        chat.Pin(TestChatFactory.CreatedAt.AddMinutes(5));
+        chat.Unpin();
+
+        Assert.Null(chat.PinnedAt);
+        Assert.False(chat.IsPinned);
+    }
+
+    [Fact]
+    public void ArchiveAndUnarchiveDoNotChangePinnedState()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        DateTimeOffset pinnedAt = TestChatFactory.CreatedAt.AddMinutes(5);
+
+        chat.Pin(pinnedAt);
+        chat.Archive();
+
+        Assert.True(chat.IsArchived);
+        Assert.True(chat.IsPinned);
+        Assert.Equal(pinnedAt, chat.PinnedAt);
+
+        chat.Unarchive();
+
+        Assert.False(chat.IsArchived);
+        Assert.True(chat.IsPinned);
+        Assert.Equal(pinnedAt, chat.PinnedAt);
+    }
+
+    [Fact]
+    public void UnpinDoesNotChangeArchivedState()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+
+        chat.Pin(TestChatFactory.CreatedAt.AddMinutes(5));
+        chat.Archive();
+        chat.Unpin();
+
+        Assert.True(chat.IsArchived);
+        Assert.False(chat.IsPinned);
+        Assert.Null(chat.PinnedAt);
+    }
+
+    [Fact]
     public void FindMessageReturnsExistingMessageAndNullForUnknownMessage()
     {
         ChatThread chat = TestChatFactory.CreateThread();

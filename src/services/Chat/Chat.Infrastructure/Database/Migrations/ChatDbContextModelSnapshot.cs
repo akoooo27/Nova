@@ -37,9 +37,17 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("current_message_id");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
                     b.Property<bool>("IsTemporary")
                         .HasColumnType("boolean")
                         .HasColumnName("is_temporary");
+
+                    b.Property<DateTimeOffset?>("PinnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pinned_at");
 
                     b.Property<string>("Title")
                         .IsRequired()
