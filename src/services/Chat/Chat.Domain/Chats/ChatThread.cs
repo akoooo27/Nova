@@ -332,6 +332,9 @@ public sealed class ChatThread : AggregateRoot<ChatId>
     public void Unarchive() =>
         IsArchived = false;
 
+    public void Rename(ChatTitle title) =>
+        Title = title;
+
     public ChatMessage? FindMessage(ChatMessageId messageId) =>
         _messages.SingleOrDefault(message => message.Id == messageId);
 

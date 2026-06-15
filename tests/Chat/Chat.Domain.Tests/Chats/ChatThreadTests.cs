@@ -583,6 +583,32 @@ public sealed class ChatThreadTests
     }
 
     [Fact]
+    public void RenameReplacesTitleWithoutUpdatingActivityTimestamp()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatTitle title = TestChatFactory.CreateTitle("Renamed chat");
+
+        chat.Rename(title);
+
+        Assert.Equal(title, chat.Title);
+        Assert.Equal(TestChatFactory.CreatedAt, chat.UpdatedAt);
+    }
+
+    [Fact]
+    public void MetadataStateChangesDoNotUpdateActivityTimestamp()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        DateTimeOffset pinnedAt = TestChatFactory.CreatedAt.AddMinutes(5);
+
+        chat.Pin(pinnedAt);
+        chat.Archive();
+        chat.Unpin();
+        chat.Unarchive();
+
+        Assert.Equal(TestChatFactory.CreatedAt, chat.UpdatedAt);
+    }
+
+    [Fact]
     public void FindMessageReturnsExistingMessageAndNullForUnknownMessage()
     {
         ChatThread chat = TestChatFactory.CreateThread();
