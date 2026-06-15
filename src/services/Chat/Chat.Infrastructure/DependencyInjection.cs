@@ -6,6 +6,7 @@ using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Application.Abstractions.ProviderLogos;
 using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebSearch;
+using Chat.Application.Chats.Cleanup;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
 using Chat.Application.Turns;
@@ -77,6 +78,12 @@ public static class DependencyInjection
             .AddDatabaseServices()
             .AddTurnPipeline(configuration)
             .AddTurnWorkerMessaging(configuration);
+
+    public static IServiceCollection AddCleanupWorkerInfrastructure(this IServiceCollection services) =>
+        services
+            .AddSharedInfrastructure()
+            .AddDatabaseServices()
+            .AddScoped<ITemporaryChatCleaner, TemporaryChatCleaner>();
 
     private static IServiceCollection AddDatabaseServices(this IServiceCollection services)
     {

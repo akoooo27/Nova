@@ -20,4 +20,41 @@ internal sealed class ChatRepository(ChatDbContext db) : IChatRepository
     {
         db.ChatThreads.Add(chat);
     }
+
+    public async Task<int> DeleteExpiredTemporaryChatsAsync
+    (
+        DateTimeOffset olderThan,
+        CancellationToken cancellationToken = default
+    )
+    {
+        const int batchSize = 1000;
+
+        int totalDeleted = 0;
+
+        while (true)
+        {
+            List<ChatId> batch = await db.ChatThreads
+                .Where(chat => chat.IsTemporary && chat.UpdatedAt < olderThan)
+                .OrderBy(chat => chat.UpdatedAt)
+                .Take(batchSize)
+                .Select(chat => chat.Id)
+                .ToListAsync(cancellationToken);
+
+            if (batch.Count == 0)
+            {
+                break;
+            }
+
+            totalDeleted += await db.ChatThreads
+                .Where(chat => batch.Contains(chat.Id) && chat.IsTemporary && chat.UpdatedAt < olderThan)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (batch.Count < batchSize)
+            {
+                break;
+            }
+        }
+
+        return totalDeleted;
+    }
 }

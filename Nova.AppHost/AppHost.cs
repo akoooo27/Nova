@@ -42,6 +42,8 @@ IResourceBuilder<ParameterResource> auth0ClientId = builder.AddParameter("auth0-
 IResourceBuilder<ParameterResource> auth0ClientSecret = builder.AddParameter("auth0-client-secret", secret: true);
 IResourceBuilder<ParameterResource> auth0EventsWebhookToken =
     builder.AddParameter("auth0-events-webhook-token", secret: true);
+IResourceBuilder<ParameterResource> hangfireDashboardSecret =
+    builder.AddParameter("hangfire-dashboard-secret", secret: true);
 
 IResourceBuilder<ProjectResource> bff = builder.AddProject<Projects.BFF>("bff")
     .WithHttpEndpoint(port: 7000, name: "http")
@@ -103,6 +105,12 @@ builder.AddProject<Projects.Chat_TurnWorker>("chat-turn-worker")
     .WithReference(rabbitMq)
     .WaitFor(redis)
     .WaitFor(rabbitMq)
+    .WaitForCompletion(chatMigrations);
+
+builder.AddProject<Projects.Chat_CleanupWorker>("chat-cleanup-worker")
+    .WithHttpEndpoint(port: 7300, name: "http")
+    .WithEnvironment("HangfireDashboard__Secret", hangfireDashboardSecret)
+    .WithReference(chatDb)
     .WaitForCompletion(chatMigrations);
 
 bff

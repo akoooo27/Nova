@@ -98,8 +98,6 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
-
 builder.Services
     .AddOptions<KeyManagementOptions>()
     .Configure<IConnectionMultiplexer>((options, connectionMultiplexer) =>

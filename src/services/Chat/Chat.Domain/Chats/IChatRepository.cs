@@ -13,4 +13,10 @@ public interface IChatRepository
     );
 
     void Add(ChatThread chat);
+
+    Task<int> DeleteExpiredTemporaryChatsAsync
+    (
+        DateTimeOffset olderThan,
+        CancellationToken cancellationToken = default
+    );
 }

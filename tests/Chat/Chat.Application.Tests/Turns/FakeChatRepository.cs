@@ -31,4 +31,11 @@ internal sealed class FakeChatRepository : IChatRepository
     {
         _threads.Add(chat);
     }
+
+    public Task<int> DeleteExpiredTemporaryChatsAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default)
+    {
+        int removed = _threads.RemoveAll(thread => thread.IsTemporary && thread.UpdatedAt < olderThan);
+
+        return Task.FromResult(removed);
+    }
 }

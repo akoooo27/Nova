@@ -10,6 +10,7 @@
   </Folder>
   <Folder Name="/src/workers/">
     <Project Path="src/workers/BFF.MigrationWorker/BFF.MigrationWorker.csproj" />
+    <Project Path="src/workers/Chat.CleanupWorker/Chat.CleanupWorker.csproj" />
     <Project Path="src/workers/Chat.MigrationWorker/Chat.MigrationWorker.csproj" />
     <Project Path="src/workers/IdentityIngress.MigrationWorker/IdentityIngress.MigrationWorker.csproj" />
   </Folder>

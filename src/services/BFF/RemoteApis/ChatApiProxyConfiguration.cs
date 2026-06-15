@@ -38,12 +38,12 @@ internal static class ChatApiProxyConfiguration
         .WithAntiforgeryCheck();
 
     public static ClusterConfig CreateCluster(string address) =>
-        new ClusterConfig
+        new()
         {
             ClusterId = ClusterId,
             Destinations = new Dictionary<string, DestinationConfig>(StringComparer.OrdinalIgnoreCase)
             {
-                [DestinationId] = new DestinationConfig
+                [DestinationId] = new()
                 {
                     Address = address,
                 },
