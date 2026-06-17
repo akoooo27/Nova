@@ -9,16 +9,16 @@
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
 
     <!-- Aspire -->
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.4" />
-    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.4" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.4" />
-    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.4" />
-    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.4" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.5" />
 
-    <PackageVersion Include="Aspire.Npgsql" Version="13.4.4" />
-    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.4" />
-    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.4" />
-    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.4" />
+    <PackageVersion Include="Aspire.Npgsql" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.5" />
+    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.5" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.5" />
     
     <!-- Forced to include due to high severity security issue of pinned one -->
     <PackageVersion Include="MessagePack" Version="3.1.7" />
@@ -62,12 +62,14 @@
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.4.1" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
 
-    <PackageVersion Include="AWSSDK.S3" Version="4.0.24.4" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.25" />
     
     <PackageVersion Include="Microsoft.Agents.AI" Version="1.10.0" />
     <PackageVersion Include="Microsoft.Agents.AI.OpenAI" Version="1.10.0" />
     
     <PackageVersion Include="PostHog.AspNetCore" Version="2.6.3" />
+    
+    <PackageVersion Include="Firecrawl" Version="1.1.2" />
     <!-- Api -->
     <PackageVersion Include="Duende.BFF" Version="4.2.0" />
     <PackageVersion Include="Duende.BFF.EntityFramework" Version="4.2.0" />

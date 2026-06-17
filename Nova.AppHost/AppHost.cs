@@ -93,12 +93,14 @@ IResourceBuilder<ProjectResource> chatApi = builder.AddProject<Projects.Chat_Api
 
 IResourceBuilder<ParameterResource> agentApiKey = builder.AddParameter("agent-api-key", secret: true);
 IResourceBuilder<ParameterResource> exaApiKey = builder.AddParameter("exa-api-key", secret: true);
+IResourceBuilder<ParameterResource> firecrawlApiKey = builder.AddParameter("firecrawl-api-key", secret: true);
 IResourceBuilder<ParameterResource> postHogProjectApiKey =
     builder.AddParameter("posthog-project-api-key", secret: true);
 
 builder.AddProject<Projects.Chat_TurnWorker>("chat-turn-worker")
     .WithEnvironment("Agent__ApiKey", agentApiKey)
     .WithEnvironment("Exa__ApiKey", exaApiKey)
+    .WithEnvironment("Firecrawl__ApiKey", firecrawlApiKey)
     .WithEnvironment("PostHog__ProjectApiKey", postHogProjectApiKey)
     .WithReference(redis)
     .WithReference(chatDb)

@@ -5,6 +5,7 @@ using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Application.Abstractions.ProviderLogos;
 using Chat.Application.Abstractions.Turns;
+using Chat.Application.Abstractions.WebRead;
 using Chat.Application.Abstractions.WebSearch;
 using Chat.Application.Chats.Cleanup;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
@@ -29,6 +30,7 @@ using Chat.Infrastructure.ProviderLogos;
 using Chat.Infrastructure.Turns;
 using Chat.Infrastructure.Turns.Consumers;
 using Chat.Infrastructure.Users.Consumers;
+using Chat.Infrastructure.WebRead;
 using Chat.Infrastructure.WebSearch;
 
 using MassTransit;
@@ -241,6 +243,19 @@ public static class DependencyInjection
                 httpClient.DefaultRequestHeaders.Add("x-api-key", options.ApiKey);
             })
             .AddStandardResilienceHandler();
+
+        // read_url tool (Firecrawl). Delete this block to remove the tool entirely.
+        services
+            .AddOptions<FirecrawlOptions>()
+            .Bind(configuration.GetSection(FirecrawlOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services
+            .AddHttpClient<IUrlReader, FirecrawlUrlReader>()
+            .AddStandardResilienceHandler();
+
+        services.AddScoped<IAgentTool, ReadUrlTool>();
 
         // Decorator stack (spec Rule 3): remove this registration and AddAnalytics
         // to delete PostHog without changing the turn pipeline.
