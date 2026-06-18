@@ -1,0 +1,3 @@
+namespace Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
+
+public sealed record ManagedModelCatalogReadModel(IReadOnlyCollection<ManagedLlmProviderReadModel> Providers);

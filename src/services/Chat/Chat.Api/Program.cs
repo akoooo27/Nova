@@ -15,6 +15,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 builder.AddRedisDistributedCache("redis");
+builder.AddRedisClient("redis");
 
 builder.AddNpgsqlDataSource("chat-db");
 

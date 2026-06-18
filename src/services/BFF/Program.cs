@@ -1,23 +1,30 @@
 using BFF.Database;
 using BFF.FrontendProxy;
 using BFF.RemoteApis;
+using BFF.Security;
 
 using Duende.Bff;
 using Duende.Bff.Builder;
 using Duende.Bff.DynamicFrontends;
+using Duende.Bff.Endpoints;
 using Duende.Bff.EntityFramework;
 using Duende.Bff.Yarp;
 
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.DataProtection.StackExchangeRedis;
 using Microsoft.Extensions.Options;
 
 using Shared.Infrastructure.Options;
+
+using StackExchange.Redis;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddNpgsqlDbContext<BffSessionDbContext>("bff-db");
+builder.AddRedisClient("redis");
 
 builder.Services.AddOptions<Auth0Options>()
     .BindConfiguration(Auth0Options.SectionName)
@@ -37,6 +44,8 @@ builder.Services.AddBff(options =>
         options.Cookie.Name = "__Nova-bff";
         options.Cookie.SameSite = SameSiteMode.Strict;
     });
+
+builder.Services.AddTransient<IUserEndpointClaimsEnricher, PermissionsClaimsEnricher>();
 
 builder.Services
     .AddReverseProxy()
@@ -89,7 +98,16 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services
+    .AddOptions<KeyManagementOptions>()
+    .Configure<IConnectionMultiplexer>((options, connectionMultiplexer) =>
+    {
+        options.XmlRepository = new RedisXmlRepository
+        (
+            databaseFactory: () => connectionMultiplexer.GetDatabase(),
+            key: "Nova:BFF:DataProtection-Keys"
+        );
+    });
 
 builder.Services.AddDataProtection()
     .SetApplicationName("BFF");

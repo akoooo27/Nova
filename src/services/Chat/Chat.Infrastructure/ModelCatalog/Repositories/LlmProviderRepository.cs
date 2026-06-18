@@ -47,4 +47,9 @@ internal sealed class LlmProviderRepository(ChatDbContext db) : ILlmProviderRepo
     {
         db.LlmProviders.Add(provider);
     }
+
+    public void Remove(LlmProvider provider)
+    {
+        db.LlmProviders.Remove(provider);
+    }
 }

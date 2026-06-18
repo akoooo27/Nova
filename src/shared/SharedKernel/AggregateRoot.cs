@@ -3,6 +3,8 @@ namespace SharedKernel;
 public abstract class AggregateRoot<TId> : IAggregateRoot
     where TId : notnull
 {
+    protected AggregateRoot() => Id = default!;
+
     protected AggregateRoot(TId id) => Id = id;
 
     public TId Id { get; }

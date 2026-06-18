@@ -11,6 +11,7 @@ public static class ModelCatalogResultMapper
             Name: provider.Name.Value,
             Slug: provider.Slug.Value,
             IsFeatured: provider.IsFeatured,
+            IsEnabled: provider.IsEnabled,
             LogoKey: provider.LogoKey?.Value,
             Models: provider.Models
                 .OrderBy(model => model.Profile.Name.Value)

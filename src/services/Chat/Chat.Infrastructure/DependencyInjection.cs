@@ -1,18 +1,37 @@
+using Amazon.S3;
+
+using Chat.Application.Abstractions.Analytics;
 using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.ModelCatalog;
-using Chat.Application.FavoriteModels.Queries;
+using Chat.Application.Abstractions.ProviderLogos;
+using Chat.Application.Abstractions.Turns;
+using Chat.Application.Abstractions.WebRead;
+using Chat.Application.Abstractions.WebSearch;
+using Chat.Application.Chats.Cleanup;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
+using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
+using Chat.Application.Turns;
+using Chat.Application.Turns.Tools;
+using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
+using Chat.Infrastructure.Agents;
+using Chat.Infrastructure.Analytics;
+using Chat.Infrastructure.Chats.Repositories;
 using Chat.Infrastructure.Database;
-using Chat.Infrastructure.FavoriteModels;
 using Chat.Infrastructure.FavoriteModels.Readers;
 using Chat.Infrastructure.FavoriteModels.Repositories;
 using Chat.Infrastructure.ModelCatalog.Caching;
 using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
+using Chat.Infrastructure.Options;
+using Chat.Infrastructure.ProviderLogos;
+using Chat.Infrastructure.Turns;
+using Chat.Infrastructure.Turns.Consumers;
 using Chat.Infrastructure.Users.Consumers;
+using Chat.Infrastructure.WebRead;
+using Chat.Infrastructure.WebSearch;
 
 using MassTransit;
 
@@ -20,6 +39,9 @@ using Mediator;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+
+using PostHog;
 
 using Shared.Application.Messaging;
 using Shared.Infrastructure;
@@ -29,6 +51,8 @@ using Shared.Infrastructure.Messaging;
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
 using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
+
+using PostHogSdkOptions = PostHog.PostHogOptions;
 
 namespace Chat.Infrastructure;
 
@@ -42,7 +66,26 @@ public static class DependencyInjection
             .AddDatabaseServices()
             .AddCacheServices(configuration)
             .AddReaders()
-            .AddMessagingServices(configuration);
+            .AddMessagingServices(configuration)
+            .AddTurnStreamReading()
+            .AddProviderLogoStorage(configuration);
+
+    public static IServiceCollection AddTurnWorkerInfrastructure
+    (
+        this IServiceCollection services,
+        IConfiguration configuration
+    ) =>
+        services
+            .AddSharedInfrastructure()
+            .AddDatabaseServices()
+            .AddTurnPipeline(configuration)
+            .AddTurnWorkerMessaging(configuration);
+
+    public static IServiceCollection AddCleanupWorkerInfrastructure(this IServiceCollection services) =>
+        services
+            .AddSharedInfrastructure()
+            .AddDatabaseServices()
+            .AddScoped<ITemporaryChatCleaner, TemporaryChatCleaner>();
 
     private static IServiceCollection AddDatabaseServices(this IServiceCollection services)
     {
@@ -52,6 +95,7 @@ public static class DependencyInjection
 
         services.AddScoped<ILlmProviderRepository, LlmProviderRepository>();
         services.AddScoped<IFavoriteModelRepository, FavoriteModelRepository>();
+        services.AddScoped<IChatRepository, ChatRepository>();
 
         return services;
     }
@@ -81,8 +125,20 @@ public static class DependencyInjection
                 LlmModelProfileUpdatedCacheHandler>();
 
         services
+            .AddScoped<INotificationHandler<DomainEventNotification<LlmModelAvailabilityChanged>>,
+                LlmModelAvailabilityChangedCacheHandler>();
+
+        services
+            .AddScoped<INotificationHandler<DomainEventNotification<LlmModelRemoved>>,
+                LlmModelRemovedCacheHandler>();
+
+        services
             .AddScoped<INotificationHandler<DomainEventNotification<LlmProviderUpdated>>,
                 LlmProviderUpdatedCacheHandler>();
+
+        services
+            .AddScoped<INotificationHandler<DomainEventNotification<LlmProviderDeleted>>,
+                LlmProviderDeletedCacheHandler>();
 
         return services;
     }
@@ -91,6 +147,8 @@ public static class DependencyInjection
     {
         services.AddScoped<PublicModelCatalogDapperReader>();
         services.AddScoped<IPublicModelCatalogReader, CachedPublicModelCatalogReader>();
+
+        services.AddScoped<IManagedModelCatalogReader, ManagedModelCatalogDapperReader>();
 
         services.AddScoped<IFavoriteModelsReader, FavoriteModelsReader>();
 
@@ -108,6 +166,147 @@ public static class DependencyInjection
             configurator.AddConsumer<UserRegisteredConsumer>();
             configurator.AddConsumer<UserUpdatedConsumer>();
             configurator.AddConsumer<UserDeletedConsumer>();
+
+            configurator.AddEntityFrameworkOutbox<ChatDbContext>(outbox =>
+            {
+                outbox.UsePostgres();
+                outbox.UseBusOutbox();
+            });
+
+            configurator.AddConfigureEndpointsCallback((context, _, endpointConfigurator) =>
+            {
+                endpointConfigurator.UseEntityFrameworkOutbox<ChatDbContext>(context);
+            });
+
+            configurator.UsingRabbitMq((context, rabbitMqConfigurator) =>
+            {
+                string rabbitMqConnectionString = configuration.GetConnectionString("rabbitmq")
+                    ?? throw new InvalidOperationException("Connection string 'rabbitmq' is required.");
+
+                rabbitMqConfigurator.Host(new Uri(rabbitMqConnectionString));
+                rabbitMqConfigurator.ConfigureEndpoints(context);
+            });
+        });
+
+        return services;
+    }
+
+    private static IServiceCollection AddProviderLogoStorage(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services
+            .AddOptions<ProviderLogoStorageOptions>()
+            .Bind(configuration.GetSection(ProviderLogoStorageOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client());
+
+        services.AddScoped<IProviderLogoStorage, S3ProviderLogoStorage>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddTurnStreamReading(this IServiceCollection services)
+    {
+        services.AddSingleton<ITurnStreamReader, RedisTurnStreamReader>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddTurnPipeline(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<AgentOptions>()
+            .Bind(configuration.GetSection(AgentOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services
+            .AddOptions<ExaOptions>()
+            .Bind(configuration.GetSection(ExaOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddScoped<ChatTurnOrchestrator>();
+        services.AddScoped<IContextBuilder, ContextBuilder>();
+        services.AddSingleton<IMemoryRetriever, NoOpMemoryRetriever>();
+        services.AddSingleton<ITokenPublisher, RedisStreamTokenPublisher>();
+        services.AddScoped<IAgentTool, WebSearchTool>();
+
+        services
+            .AddHttpClient<IWebSearchClient, ExaWebSearchClient>((serviceProvider, httpClient) =>
+            {
+                ExaOptions options = serviceProvider.GetRequiredService<IOptions<ExaOptions>>().Value;
+
+                httpClient.BaseAddress = options.BaseUrl;
+                httpClient.DefaultRequestHeaders.Add("x-api-key", options.ApiKey);
+            })
+            .AddStandardResilienceHandler();
+
+        // read_url tool (Firecrawl). Delete this block to remove the tool entirely.
+        services
+            .AddOptions<FirecrawlOptions>()
+            .Bind(configuration.GetSection(FirecrawlOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services
+            .AddHttpClient<IUrlReader, FirecrawlUrlReader>()
+            .AddStandardResilienceHandler();
+
+        services.AddScoped<IAgentTool, ReadUrlTool>();
+
+        // Decorator stack (spec Rule 3): remove this registration and AddAnalytics
+        // to delete PostHog without changing the turn pipeline.
+        services.AddScoped<AgentFrameworkRunner>();
+        services.AddScoped<IAgentRunner>(sp => new TelemetryAgentRunner
+        (
+            inner: sp.GetRequiredService<AgentFrameworkRunner>(),
+            analytics: sp.GetRequiredService<IAnalytics>()
+        ));
+
+        AddAnalytics(services, configuration);
+
+        return services;
+    }
+
+    private static void AddAnalytics(IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<PostHogAnalyticsOptions>()
+            .Bind(configuration.GetSection(PostHogAnalyticsOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        PostHogAnalyticsOptions options = configuration
+            .GetSection(PostHogAnalyticsOptions.SectionName)
+            .Get<PostHogAnalyticsOptions>() ?? new PostHogAnalyticsOptions();
+
+        if (string.IsNullOrWhiteSpace(options.ProjectApiKey))
+        {
+            services.AddSingleton<IAnalytics, NullAnalytics>();
+            return;
+        }
+
+        services.AddSingleton<IPostHogClient>(_ => new PostHogClient(new PostHogSdkOptions
+        {
+            ProjectToken = options.ProjectApiKey,
+            HostUrl = options.HostUrl
+        }));
+
+        services.AddSingleton<IAnalytics, PostHogAnalytics>();
+    }
+
+    private static IServiceCollection AddTurnWorkerMessaging(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<IMessageBus, MessageBus>();
+
+        services.AddMassTransit(configurator =>
+        {
+            configurator.SetKebabCaseEndpointNameFormatter();
+
+            configurator.AddConsumer<TurnRequestedConsumer, TurnRequestedConsumerDefinition>();
 
             configurator.AddEntityFrameworkOutbox<ChatDbContext>(outbox =>
             {

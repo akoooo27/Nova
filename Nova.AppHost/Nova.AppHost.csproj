@@ -14,13 +14,17 @@
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" />
     <PackageReference Include="Aspire.Hosting.Redis" />
+    
+    <PackageReference Include="MessagePack" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\src\services\BFF\BFF.csproj" />
     <ProjectReference Include="..\src\services\Chat\Chat.Api\Chat.Api.csproj" />
+    <ProjectReference Include="..\src\services\Chat\Chat.TurnWorker\Chat.TurnWorker.csproj" />
     <ProjectReference Include="..\src\services\IdentityIngress\IdentityIngress.csproj" />
     <ProjectReference Include="..\src\workers\BFF.MigrationWorker\BFF.MigrationWorker.csproj" />
+    <ProjectReference Include="..\src\workers\Chat.CleanupWorker\Chat.CleanupWorker.csproj" />
     <ProjectReference Include="..\src\workers\Chat.MigrationWorker\Chat.MigrationWorker.csproj" />
     <ProjectReference Include="..\src\workers\IdentityIngress.MigrationWorker\IdentityIngress.MigrationWorker.csproj" />
   </ItemGroup>

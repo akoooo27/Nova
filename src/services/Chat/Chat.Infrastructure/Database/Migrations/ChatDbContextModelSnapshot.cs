@@ -18,10 +18,135 @@ namespace Chat.Infrastructure.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Chat.Domain.Chats.ChatThread", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CurrentMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_message_id");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
+                    b.Property<bool>("IsTemporary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_temporary");
+
+                    b.Property<DateTimeOffset?>("PinnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pinned_at");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chats");
+
+                    b.HasIndex("UserId", "UpdatedAt", "Id")
+                        .IsDescending(false, true, false)
+                        .HasDatabaseName("ix_chats_user_id_updated_at_id");
+
+                    b.ToTable("chats", (string)null);
+                });
+
+            modelBuilder.Entity("Chat.Domain.Chats.Entities.ChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(32768)
+                        .HasColumnType("character varying(32768)")
+                        .HasColumnName("content");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<Guid?>("LlmModelId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("llm_model_id");
+
+                    b.Property<Guid?>("ParentMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_message_id");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("role");
+
+                    b.Property<int>("SiblingIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("sibling_index");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chat_messages");
+
+                    b.HasIndex("ParentMessageId")
+                        .HasDatabaseName("ix_chat_messages_parent_message_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_chat_messages_status");
+
+                    b.HasIndex("ChatId", "ParentMessageId", "SiblingIndex")
+                        .IsUnique()
+                        .HasDatabaseName("ix_chat_messages_chat_id_parent_message_id_sibling_index");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("ChatId", "ParentMessageId", "SiblingIndex"), false);
+
+                    b.ToTable("chat_messages", (string)null);
+                });
 
             modelBuilder.Entity("Chat.Domain.FavoriteModels.FavoriteModel", b =>
                 {
@@ -128,6 +253,12 @@ namespace Chat.Infrastructure.Database.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_enabled");
 
                     b.Property<bool>("IsFeatured")
                         .ValueGeneratedOnAdd()
@@ -428,6 +559,22 @@ namespace Chat.Infrastructure.Database.Migrations
                     b.ToTable("outbox_state", (string)null);
                 });
 
+            modelBuilder.Entity("Chat.Domain.Chats.Entities.ChatMessage", b =>
+                {
+                    b.HasOne("Chat.Domain.Chats.ChatThread", null)
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chat_messages_chats_chat_id");
+
+                    b.HasOne("Chat.Domain.Chats.Entities.ChatMessage", null)
+                        .WithMany()
+                        .HasForeignKey("ParentMessageId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("fk_chat_messages_chat_messages_parent_message_id");
+                });
+
             modelBuilder.Entity("Chat.Domain.FavoriteModels.FavoriteModel", b =>
                 {
                     b.HasOne("Chat.Domain.ModelCatalog.Entities.LlmModel", null)
@@ -460,6 +607,11 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasForeignKey("InboxMessageId", "InboxConsumerId")
                         .HasPrincipalKey("MessageId", "ConsumerId")
                         .HasConstraintName("fk_outbox_message_inbox_state_inbox_message_id_inbox_consumer_");
+                });
+
+            modelBuilder.Entity("Chat.Domain.Chats.ChatThread", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("Chat.Domain.ModelCatalog.LlmProvider", b =>

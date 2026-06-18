@@ -19,6 +19,8 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
 
     public bool IsFeatured { get; private set; }
 
+    public bool IsEnabled { get; private set; }
+
     public AssetKey? LogoKey { get; private set; }
 
     public IReadOnlyCollection<LlmModel> Models => _models;
@@ -28,12 +30,14 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         LlmProviderId id,
         ProviderName name,
         ProviderSlug slug,
-        bool isFeatured
+        bool isFeatured,
+        bool isEnabled
     ) : base(id)
     {
         Name = name;
         Slug = slug;
         IsFeatured = isFeatured;
+        IsEnabled = isEnabled;
     }
 
     public static LlmProvider Create
@@ -46,7 +50,8 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         id: LlmProviderId.New(),
         name: name,
         slug: slug,
-        isFeatured: isFeatured
+        isFeatured: isFeatured,
+        isEnabled: true
     );
 
     public ErrorOr<LlmModel> AddModel
@@ -96,7 +101,10 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
             return LlmProviderErrors.ModelNotFound(modelId);
         }
 
-        model.Enable();
+        if (model.Enable())
+        {
+            AddDomainEvent(new LlmModelAvailabilityChanged(Id, model.Id, model.IsEnabled));
+        }
 
         return Result.Success;
     }
@@ -110,9 +118,49 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
             return LlmProviderErrors.ModelNotFound(modelId);
         }
 
-        model.Disable();
+        if (model.Disable())
+        {
+            AddDomainEvent(new LlmModelAvailabilityChanged(Id, model.Id, model.IsEnabled));
+        }
 
         return Result.Success;
+    }
+
+    public ErrorOr<Success> RemoveModel(LlmModelId modelId)
+    {
+        LlmModel? model = FindModel(modelId);
+
+        if (model is null)
+        {
+            return LlmProviderErrors.ModelNotFound(modelId);
+        }
+
+        _models.Remove(model);
+        AddDomainEvent(new LlmModelRemoved(Id, model.Id));
+
+        return Result.Success;
+    }
+
+    public void Enable()
+    {
+        if (IsEnabled)
+        {
+            return;
+        }
+
+        IsEnabled = true;
+        AddDomainEvent(new LlmProviderUpdated(Id));
+    }
+
+    public void Disable()
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        IsEnabled = false;
+        AddDomainEvent(new LlmProviderUpdated(Id));
     }
 
     public void UpdateDetails
@@ -134,6 +182,18 @@ public sealed class LlmProvider : AggregateRoot<LlmProviderId>
         IsFeatured = isFeatured;
 
         AddDomainEvent(new LlmProviderUpdated(Id));
+    }
+
+    public ErrorOr<Success> RemoveFromCatalog()
+    {
+        if (_models.Count > 0)
+        {
+            return LlmProviderErrors.CannotDeleteProviderWithModels(Id);
+        }
+
+        AddDomainEvent(new LlmProviderDeleted(Id));
+
+        return Result.Success;
     }
 
     public void UpdateLogoKey(AssetKey logoKey) => LogoKey = logoKey;

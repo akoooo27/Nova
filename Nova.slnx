@@ -10,6 +10,7 @@
   </Folder>
   <Folder Name="/src/workers/">
     <Project Path="src/workers/BFF.MigrationWorker/BFF.MigrationWorker.csproj" />
+    <Project Path="src/workers/Chat.CleanupWorker/Chat.CleanupWorker.csproj" />
     <Project Path="src/workers/Chat.MigrationWorker/Chat.MigrationWorker.csproj" />
     <Project Path="src/workers/IdentityIngress.MigrationWorker/IdentityIngress.MigrationWorker.csproj" />
   </Folder>
@@ -18,6 +19,7 @@
     <Project Path="src/services/Chat/Chat.Application/Chat.Application.csproj" />
     <Project Path="src/services/Chat/Chat.Domain/Chat.Domain.csproj" />
     <Project Path="src/services/Chat/Chat.Infrastructure/Chat.Infrastructure.csproj" />
+    <Project Path="src/services/Chat/Chat.TurnWorker/Chat.TurnWorker.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Chat/">

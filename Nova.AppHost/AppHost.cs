@@ -4,7 +4,8 @@ IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(ar
 
 IResourceBuilder<ParameterResource> redisPassword = builder.AddParameter("redis-password", secret: true);
 
-IResourceBuilder<RedisResource> redis = builder.AddRedis("redis", password: redisPassword);
+IResourceBuilder<RedisResource> redis = builder.AddRedis("redis", password: redisPassword)
+    .WithHostPort(6379);
 
 IResourceBuilder<ParameterResource> postgresUser = builder.AddParameter("postgres-user", secret: true);
 IResourceBuilder<ParameterResource> postgresPassword = builder.AddParameter("postgres-password", secret: true);
@@ -14,7 +15,7 @@ IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgre
     .WithDataVolume();
 
 IResourceBuilder<PostgresDatabaseResource> bffDb = postgres.AddDatabase("bff-db");
-IResourceBuilder<PostgresDatabaseResource> chatDb = postgres.AddDatabase("chat-db");
+IResourceBuilder<IResourceWithConnectionString> chatDb = builder.AddConnectionString("chat-db");
 IResourceBuilder<PostgresDatabaseResource> identityIngressDb = postgres.AddDatabase("identity-ingress-db");
 
 IResourceBuilder<ParameterResource> rabbitMqUser = builder.AddParameter("rabbitmq-user", secret: true);
@@ -28,8 +29,7 @@ IResourceBuilder<ProjectResource> bffMigrations = builder.AddProject<Projects.BF
     .WaitFor(bffDb);
 
 IResourceBuilder<ProjectResource> chatMigrations = builder.AddProject<Projects.Chat_MigrationWorker>("chat-migrations")
-    .WithReference(chatDb)
-    .WaitFor(chatDb);
+    .WithReference(chatDb);
 
 IResourceBuilder<ProjectResource> identityIngressMigrations = builder
     .AddProject<Projects.IdentityIngress_MigrationWorker>("identity-ingress-migrations")
@@ -42,6 +42,8 @@ IResourceBuilder<ParameterResource> auth0ClientId = builder.AddParameter("auth0-
 IResourceBuilder<ParameterResource> auth0ClientSecret = builder.AddParameter("auth0-client-secret", secret: true);
 IResourceBuilder<ParameterResource> auth0EventsWebhookToken =
     builder.AddParameter("auth0-events-webhook-token", secret: true);
+IResourceBuilder<ParameterResource> hangfireDashboardSecret =
+    builder.AddParameter("hangfire-dashboard-secret", secret: true);
 
 IResourceBuilder<ProjectResource> bff = builder.AddProject<Projects.BFF>("bff")
     .WithHttpEndpoint(port: 7000, name: "http")
@@ -51,8 +53,10 @@ IResourceBuilder<ProjectResource> bff = builder.AddProject<Projects.BFF>("bff")
     .WithEnvironment("Auth0__ClientId", auth0ClientId)
     .WithEnvironment("Auth0__ClientSecret", auth0ClientSecret)
     .WithReference(bffDb)
+    .WithReference(redis)
     .WithReference(rabbitMq)
     .WaitFor(bffDb)
+    .WaitFor(redis)
     .WaitFor(rabbitMq)
     .WaitForCompletion(bffMigrations);
 
@@ -84,8 +88,31 @@ IResourceBuilder<ProjectResource> chatApi = builder.AddProject<Projects.Chat_Api
     .WithReference(chatDb)
     .WithReference(rabbitMq)
     .WaitFor(redis)
-    .WaitFor(chatDb)
     .WaitFor(rabbitMq)
+    .WaitForCompletion(chatMigrations);
+
+IResourceBuilder<ParameterResource> agentApiKey = builder.AddParameter("agent-api-key", secret: true);
+IResourceBuilder<ParameterResource> exaApiKey = builder.AddParameter("exa-api-key", secret: true);
+IResourceBuilder<ParameterResource> firecrawlApiKey = builder.AddParameter("firecrawl-api-key", secret: true);
+IResourceBuilder<ParameterResource> postHogProjectApiKey =
+    builder.AddParameter("posthog-project-api-key", secret: true);
+
+builder.AddProject<Projects.Chat_TurnWorker>("chat-turn-worker")
+    .WithEnvironment("Agent__ApiKey", agentApiKey)
+    .WithEnvironment("Exa__ApiKey", exaApiKey)
+    .WithEnvironment("Firecrawl__ApiKey", firecrawlApiKey)
+    .WithEnvironment("PostHog__ProjectApiKey", postHogProjectApiKey)
+    .WithReference(redis)
+    .WithReference(chatDb)
+    .WithReference(rabbitMq)
+    .WaitFor(redis)
+    .WaitFor(rabbitMq)
+    .WaitForCompletion(chatMigrations);
+
+builder.AddProject<Projects.Chat_CleanupWorker>("chat-cleanup-worker")
+    .WithHttpEndpoint(port: 7300, name: "http")
+    .WithEnvironment("HangfireDashboard__Secret", hangfireDashboardSecret)
+    .WithReference(chatDb)
     .WaitForCompletion(chatMigrations);
 
 bff

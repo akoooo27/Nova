@@ -46,6 +46,10 @@ internal sealed class LlmProviderConfiguration : IEntityTypeConfiguration<LlmPro
             .HasDefaultValue(false)
             .IsRequired();
 
+        builder.Property(provider => provider.IsEnabled)
+            .HasDefaultValue(true)
+            .IsRequired();
+
         builder.Property(provider => provider.LogoKey)
             .HasConversion
             (

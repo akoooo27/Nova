@@ -18,4 +18,6 @@ public interface ILlmProviderRepository
     );
 
     void Add(LlmProvider provider);
+
+    void Remove(LlmProvider provider);
 }
