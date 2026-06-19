@@ -104,11 +104,11 @@ internal sealed class ChatDetailReader(NpgsqlDataSource dataSource) : IChatDetai
     (
         Guid Id,
         string Title,
-        DateTimeOffset? PinnedAt,
+        DateTime? PinnedAt,
         bool IsArchived,
         bool IsTemporary,
-        DateTimeOffset CreatedAt,
-        DateTimeOffset UpdatedAt,
+        DateTime CreatedAt,
+        DateTime UpdatedAt,
         Guid CurrentMessageId
     );
 
@@ -121,8 +121,8 @@ internal sealed class ChatDetailReader(NpgsqlDataSource dataSource) : IChatDetai
         string Status,
         string? FailureReason,
         int SiblingIndex,
-        DateTimeOffset CreatedAt,
-        DateTimeOffset? CompletedAt,
+        DateTime CreatedAt,
+        DateTime? CompletedAt,
         Guid? ModelId,
         string? ModelSlug,
         string? ModelName

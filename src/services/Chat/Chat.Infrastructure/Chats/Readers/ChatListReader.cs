@@ -82,10 +82,10 @@ internal sealed class ChatListReader(NpgsqlDataSource dataSource) : IChatListRea
     (
         Guid Id,
         string Title,
-        DateTimeOffset? PinnedAt,
+        DateTime? PinnedAt,
         bool IsArchived,
         bool IsTemporary,
-        DateTimeOffset CreatedAt,
-        DateTimeOffset UpdatedAt
+        DateTime CreatedAt,
+        DateTime UpdatedAt
     );
 }
