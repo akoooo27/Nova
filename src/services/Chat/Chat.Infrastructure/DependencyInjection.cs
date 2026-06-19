@@ -8,6 +8,7 @@ using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebRead;
 using Chat.Application.Abstractions.WebSearch;
 using Chat.Application.Chats.Cleanup;
+using Chat.Application.Chats.Queries.GetChat;
 using Chat.Application.Chats.Queries.GetChats;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
@@ -155,6 +156,7 @@ public static class DependencyInjection
         services.AddScoped<IFavoriteModelsReader, FavoriteModelsReader>();
 
         services.AddScoped<IChatListReader, ChatListReader>();
+        services.AddScoped<IChatDetailReader, ChatDetailReader>();
 
         return services;
     }
