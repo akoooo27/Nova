@@ -7,6 +7,7 @@ public interface IChatListReader
     Task<ChatListReadModel> GetAsync
     (
         UserId userId,
+        bool isArchived,
         int limit,
         int offset,
         CancellationToken cancellationToken

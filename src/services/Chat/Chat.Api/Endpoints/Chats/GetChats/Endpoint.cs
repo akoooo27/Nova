@@ -1,4 +1,5 @@
 using Chat.Api.Endpoints;
+using Chat.Application.Chats;
 using Chat.Application.Chats.Queries.GetChats;
 
 using ErrorOr;
@@ -13,6 +14,7 @@ namespace Chat.Api.Endpoints.Chats.GetChats;
 
 internal sealed record Request
 (
+    [property: QueryParam] bool IsArchived,
     [property: QueryParam] int? Limit,
     [property: QueryParam] int? Offset
 );
@@ -20,9 +22,6 @@ internal sealed record Request
 internal sealed class Endpoint(ISender sender) : Endpoint<Request, Response>
 {
     public const string RouteName = "Chat.Chats.List";
-
-    private const int DefaultLimit = 20;
-    private const int DefaultOffset = 0;
 
     public override void Configure()
     {
@@ -47,8 +46,9 @@ internal sealed class Endpoint(ISender sender) : Endpoint<Request, Response>
     {
         GetChatsQuery query = new
         (
-            Limit: request.Limit ?? DefaultLimit,
-            Offset: request.Offset ?? DefaultOffset
+            IsArchived: request.IsArchived,
+            Limit: request.Limit ?? ChatLimits.DefaultQueryLimit,
+            Offset: request.Offset ?? ChatLimits.DefaultQueryOffset
         );
 
         ErrorOr<ChatListReadModel> result = await sender.Send(query, ct);

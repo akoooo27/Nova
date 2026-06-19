@@ -23,6 +23,7 @@ internal sealed class GetChatsHandler(IUserContext userContext, IChatListReader 
         return await reader.GetAsync
         (
             userId: userIdResult.Value,
+            isArchived: query.IsArchived,
             limit: query.Limit,
             offset: query.Offset,
             cancellationToken: cancellationToken

@@ -7,6 +7,8 @@ internal sealed class FakeChatListReader(ChatListReadModel readModel) : IChatLis
 {
     public UserId? RequestedUserId { get; private set; }
 
+    public bool? RequestedIsArchived { get; private set; }
+
     public int? RequestedLimit { get; private set; }
 
     public int? RequestedOffset { get; private set; }
@@ -16,12 +18,14 @@ internal sealed class FakeChatListReader(ChatListReadModel readModel) : IChatLis
     public Task<ChatListReadModel> GetAsync
     (
         UserId userId,
+        bool isArchived,
         int limit,
         int offset,
         CancellationToken cancellationToken
     )
     {
         RequestedUserId = userId;
+        RequestedIsArchived = isArchived;
         RequestedLimit = limit;
         RequestedOffset = offset;
         GetCallCount++;

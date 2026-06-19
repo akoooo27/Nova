@@ -14,7 +14,7 @@ internal sealed class ChatListReader(NpgsqlDataSource dataSource) : IChatListRea
                                from chats
                                where user_id = @UserId
                                  and is_temporary = false
-                                 and is_archived = false;
+                                 and is_archived = @IsArchived;
 
                                select
                                     id           as "Id",
@@ -27,7 +27,7 @@ internal sealed class ChatListReader(NpgsqlDataSource dataSource) : IChatListRea
                                 from chats
                                 where user_id = @UserId
                                   and is_temporary = false
-                                  and is_archived = false
+                                  and is_archived = @IsArchived
                                 order by (pinned_at is null), pinned_at desc, updated_at desc, id desc
                                 limit @Limit offset @Offset;
                                """;
@@ -35,6 +35,7 @@ internal sealed class ChatListReader(NpgsqlDataSource dataSource) : IChatListRea
     public async Task<ChatListReadModel> GetAsync
     (
         UserId userId,
+        bool isArchived,
         int limit,
         int offset,
         CancellationToken cancellationToken
@@ -44,8 +45,14 @@ internal sealed class ChatListReader(NpgsqlDataSource dataSource) : IChatListRea
 
         CommandDefinition command = new
         (
-            Sql,
-            new { UserId = userId.Value, Limit = limit, Offset = offset },
+            commandText: Sql,
+            parameters: new
+            {
+                UserId = userId.Value,
+                IsArchived = isArchived,
+                Limit = limit,
+                Offset = offset
+            },
             cancellationToken: cancellationToken
         );
 

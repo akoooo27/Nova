@@ -11,7 +11,7 @@ public sealed class GetChatsQueryValidatorTests
     [Fact]
     public void ValidateAcceptsInRangeLimitAndOffset()
     {
-        GetChatsQuery query = new(Limit: 20, Offset: 0);
+        GetChatsQuery query = new(IsArchived: false, Limit: 20, Offset: 0);
 
         ValidationResult result = _validator.Validate(query);
 
@@ -23,7 +23,7 @@ public sealed class GetChatsQueryValidatorTests
     [InlineData(101)]
     public void ValidateRejectsOutOfRangeLimit(int limit)
     {
-        GetChatsQuery query = new(Limit: limit, Offset: 0);
+        GetChatsQuery query = new(IsArchived: false, Limit: limit, Offset: 0);
 
         ValidationResult result = _validator.Validate(query);
 
@@ -33,7 +33,7 @@ public sealed class GetChatsQueryValidatorTests
     [Fact]
     public void ValidateRejectsNegativeOffset()
     {
-        GetChatsQuery query = new(Limit: 20, Offset: -1);
+        GetChatsQuery query = new(IsArchived: false, Limit: 20, Offset: -1);
 
         ValidationResult result = _validator.Validate(query);
 

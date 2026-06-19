@@ -8,8 +8,10 @@ namespace Chat.Application.Tests.Chats.Queries;
 
 public sealed class GetChatsHandlerTests
 {
-    [Fact]
-    public async Task HandleReadsChatsForCurrentUserWithPaging()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandleReadsChatsForCurrentUserWithFiltersAndPaging(bool isArchived)
     {
         UserId userId = UserId.FromDatabase("auth0|user-1");
         ChatListReadModel readModel = new
@@ -41,13 +43,14 @@ public sealed class GetChatsHandlerTests
 
         ErrorOr<ChatListReadModel> result = await handler.Handle
         (
-            new GetChatsQuery(Limit: 20, Offset: 0),
+            new GetChatsQuery(IsArchived: isArchived, Limit: 20, Offset: 0),
             CancellationToken.None
         );
 
         Assert.False(result.IsError);
         Assert.Same(readModel, result.Value);
         Assert.Equal(userId, reader.RequestedUserId);
+        Assert.Equal(isArchived, reader.RequestedIsArchived);
         Assert.Equal(20, reader.RequestedLimit);
         Assert.Equal(0, reader.RequestedOffset);
         Assert.Equal(1, reader.GetCallCount);
@@ -66,7 +69,7 @@ public sealed class GetChatsHandlerTests
 
         ErrorOr<ChatListReadModel> result = await handler.Handle
         (
-            new GetChatsQuery(Limit: 20, Offset: 0),
+            new GetChatsQuery(IsArchived: false, Limit: 20, Offset: 0),
             CancellationToken.None
         );
 

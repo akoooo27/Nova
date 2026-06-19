@@ -7,7 +7,7 @@ internal sealed class GetChatsQueryValidator : AbstractValidator<GetChatsQuery>
     public GetChatsQueryValidator()
     {
         RuleFor(x => x.Limit)
-            .InclusiveBetween(1, 100);
+            .InclusiveBetween(ChatLimits.MinQueryLimit, ChatLimits.MaxQueryLimit);
 
         RuleFor(x => x.Offset)
             .GreaterThanOrEqualTo(0);
