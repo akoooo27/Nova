@@ -9,16 +9,16 @@
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
 
     <!-- Aspire -->
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.5" />
-    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.5" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.5" />
-    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.5" />
-    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.DevTunnels" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.6" />
 
-    <PackageVersion Include="Aspire.Npgsql" Version="13.4.5" />
-    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.5" />
-    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.5" />
-    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.5" />
+    <PackageVersion Include="Aspire.Npgsql" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.6" />
+    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.6" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.6" />
     
     <!-- Forced to include due to high severity security issue of pinned one -->
     <PackageVersion Include="MessagePack" Version="3.1.7" />
@@ -62,7 +62,7 @@
     <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.4.1" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
 
-    <PackageVersion Include="AWSSDK.S3" Version="4.0.25" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.25.2" />
     
     <PackageVersion Include="Microsoft.Agents.AI" Version="1.10.0" />
     <PackageVersion Include="Microsoft.Agents.AI.OpenAI" Version="1.10.0" />
@@ -79,7 +79,7 @@
     <PackageVersion Include="FastEndpoints" Version="8.1.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="8.1.0" />
 
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.3" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.4" />
 
     <!-- Background Jobs -->
     <PackageVersion Include="Hangfire.Core" Version="1.8.23" />
