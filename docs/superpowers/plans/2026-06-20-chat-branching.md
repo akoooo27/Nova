@@ -455,8 +455,7 @@ private ChatThread
     ChatMessageId currentMessageId,
     DateTimeOffset createdAt,
     DateTimeOffset updatedAt,
-    bool isTemporary,
-    ChatBranchOrigin? branchOrigin
+    bool isTemporary
 ) : base(id)
 {
     UserId = userId;
@@ -465,7 +464,6 @@ private ChatThread
     CreatedAt = createdAt;
     UpdatedAt = updatedAt;
     IsTemporary = isTemporary;
-    BranchOrigin = branchOrigin;
     _messages = [.. messages];
 }
 ```
@@ -476,7 +474,7 @@ Add the aggregate property:
 public ChatBranchOrigin? BranchOrigin { get; private set; }
 ```
 
-Update `Create` to call the generalized constructor with `messages: [root]`, `currentMessageId: root.Id`, and `branchOrigin: null`.
+Update `Create` to call the generalized constructor with `messages: [root]` and `currentMessageId: root.Id`. Do not pass or assign branch ancestry during normal construction; `BranchOrigin` remains null by default.
 
 Add this factory after `Create`:
 
@@ -560,7 +558,7 @@ public static ErrorOr<ChatThread> BranchFrom
         ))
         .ToList();
 
-    return new ChatThread
+    ChatThread branch = new
     (
         id: branchId,
         userId: source.UserId,
@@ -569,11 +567,16 @@ public static ErrorOr<ChatThread> BranchFrom
         currentMessageId: copiedIds[branchPoint.Id],
         createdAt: createdAt,
         updatedAt: createdAt,
-        isTemporary: source.IsTemporary,
-        branchOrigin: ChatBranchOrigin.Create(source.Id, branchPoint.Id)
+        isTemporary: source.IsTemporary
     );
+
+    branch.BranchOrigin = ChatBranchOrigin.Create(source.Id, branchPoint.Id);
+
+    return branch;
 }
 ```
+
+Assigning `BranchOrigin` inside `BranchFrom` keeps ancestry out of the general constructor and makes the branch factory the only domain operation capable of creating a thread with provenance.
 
 - [ ] **Step 6: Run all chat domain tests**
 
