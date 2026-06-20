@@ -8,6 +8,8 @@ using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebRead;
 using Chat.Application.Abstractions.WebSearch;
 using Chat.Application.Chats.Cleanup;
+using Chat.Application.Chats.Queries.GetChat;
+using Chat.Application.Chats.Queries.GetChats;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
 using Chat.Application.Turns;
@@ -18,6 +20,7 @@ using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
 using Chat.Infrastructure.Agents;
 using Chat.Infrastructure.Analytics;
+using Chat.Infrastructure.Chats.Readers;
 using Chat.Infrastructure.Chats.Repositories;
 using Chat.Infrastructure.Database;
 using Chat.Infrastructure.FavoriteModels.Readers;
@@ -151,6 +154,9 @@ public static class DependencyInjection
         services.AddScoped<IManagedModelCatalogReader, ManagedModelCatalogDapperReader>();
 
         services.AddScoped<IFavoriteModelsReader, FavoriteModelsReader>();
+
+        services.AddScoped<IChatListReader, ChatListReader>();
+        services.AddScoped<IChatDetailReader, ChatDetailReader>();
 
         return services;
     }

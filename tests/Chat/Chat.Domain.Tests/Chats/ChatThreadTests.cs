@@ -618,6 +618,188 @@ public sealed class ChatThreadTests
         Assert.Null(chat.FindMessage(ChatMessageId.New()));
     }
 
+    [Fact]
+    public void BranchFromCopiesOnlySelectedPathWithNewIdsAndIndependentMetadata()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        source.Pin(TestChatFactory.CreatedAt.AddMinutes(1));
+        source.Archive();
+        ChatMessage root = TestChatFactory.RootMessage(source);
+        ChatMessage firstAssistant = CompleteAssistant(source, root.Id, TestChatFactory.CreatedAt.AddMinutes(2));
+        ChatMessage followUp = AddUser(source, firstAssistant.Id, TestChatFactory.CreatedAt.AddMinutes(4), "Follow up");
+        ChatMessage branchPoint = CompleteAssistant(source, followUp.Id, TestChatFactory.CreatedAt.AddMinutes(5));
+        _ = AddUser(source, branchPoint.Id, TestChatFactory.CreatedAt.AddMinutes(7), "Excluded descendant");
+        _ = CompleteAssistant(source, followUp.Id, TestChatFactory.CreatedAt.AddMinutes(8));
+        ChatMessage[] sourcePath = [root, firstAssistant, followUp, branchPoint];
+        DateTimeOffset branchedAt = TestChatFactory.CreatedAt.AddHours(1);
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom(source, branchPoint.Id, branchedAt);
+
+        Assert.False(result.IsError);
+        ChatThread branch = result.Value;
+        ChatMessage[] copiedPath = GetActivePath(branch);
+        Assert.Equal(sourcePath.Length, copiedPath.Length);
+        Assert.Equal(sourcePath.Length, branch.Messages.Count);
+        Assert.DoesNotContain(branch.Messages, copied => source.Messages.Any(original => original.Id == copied.Id));
+
+        for (int index = 0; index < sourcePath.Length; index++)
+        {
+            Assert.Equal(sourcePath[index].Role, copiedPath[index].Role);
+            Assert.Equal(sourcePath[index].Content, copiedPath[index].Content);
+            Assert.Equal(sourcePath[index].LlmModelId, copiedPath[index].LlmModelId);
+            Assert.Equal(sourcePath[index].Status, copiedPath[index].Status);
+            Assert.Equal(sourcePath[index].FailureReason, copiedPath[index].FailureReason);
+            Assert.Equal(sourcePath[index].CreatedAt, copiedPath[index].CreatedAt);
+            Assert.Equal(sourcePath[index].CompletedAt, copiedPath[index].CompletedAt);
+            Assert.Equal(0, copiedPath[index].SiblingIndex.Value);
+            Assert.Equal(index == 0 ? null : copiedPath[index - 1].Id, copiedPath[index].ParentMessageId);
+        }
+
+        Assert.Equal(source.UserId, branch.UserId);
+        Assert.Equal("Branch: Planning chat", branch.Title.Value);
+        Assert.False(branch.IsTemporary);
+        Assert.False(branch.IsPinned);
+        Assert.False(branch.IsArchived);
+        Assert.Equal(branchedAt, branch.CreatedAt);
+        Assert.Equal(branchedAt, branch.UpdatedAt);
+        Assert.Equal(copiedPath[^1].Id, branch.CurrentMessageId);
+        Assert.Equal(source.Id, branch.BranchOrigin!.SourceChatId);
+        Assert.Equal(branchPoint.Id, branch.BranchOrigin.SourceMessageId);
+        Assert.Equal(6, source.Messages.Count);
+    }
+
+    [Fact]
+    public void BranchFromPreservesFailedAssistantState()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage assistant = BeginAssistant(source);
+        FailureReason reason = TestChatFactory.CreateFailureReason("Rate limited");
+        DateTimeOffset failedAt = TestChatFactory.CreatedAt.AddMinutes(2);
+        _ = source.FailAssistantMessage(assistant.Id, reason, failedAt);
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom
+        (
+            source,
+            assistant.Id,
+            TestChatFactory.CreatedAt.AddHours(1)
+        );
+
+        Assert.False(result.IsError);
+        ChatMessage copied = GetActivePath(result.Value)[^1];
+        Assert.Equal(MessageStatus.Failed, copied.Status);
+        Assert.Equal(reason, copied.FailureReason);
+        Assert.Equal(failedAt, copied.CompletedAt);
+        Assert.Null(copied.Content);
+    }
+
+    [Fact]
+    public void BranchFromRejectsTemporarySourceChat()
+    {
+        ChatThread source = TestChatFactory.CreateThread(isTemporary: true);
+        ChatMessage assistant = CompleteAssistant(source);
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom(source, assistant.Id, TestChatFactory.CreatedAt.AddHours(1));
+
+        AssertError(result, ErrorType.Conflict, "Chat.CannotBranchTemporaryChat");
+    }
+
+    [Fact]
+    public void BranchFromRejectsUserBranchPoint()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(source);
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom(source, root.Id, TestChatFactory.CreatedAt);
+
+        AssertError(result, ErrorType.Conflict, "Chat.BranchPointMustBeAssistant");
+    }
+
+    [Fact]
+    public void BranchFromRejectsGeneratingAssistantBranchPoint()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage assistant = BeginAssistant(source);
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom(source, assistant.Id, TestChatFactory.CreatedAt);
+
+        AssertError(result, ErrorType.Conflict, "Chat.CannotBranchWhileGenerating");
+    }
+
+    [Fact]
+    public void BranchFromReturnsMessageNotFoundForUnknownBranchPoint()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom
+        (
+            source,
+            ChatMessageId.New(),
+            TestChatFactory.CreatedAt
+        );
+
+        AssertError(result, ErrorType.NotFound, "Chat.MessageNotFound");
+    }
+
+    [Fact]
+    public void BranchFromRejectsCyclicPersistedPath()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(source);
+        ChatMessage assistant = CompleteAssistant(source);
+        SetParentForCorruptionTest(root, assistant.Id);
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom(source, assistant.Id, TestChatFactory.CreatedAt);
+
+        AssertError(result, ErrorType.Unexpected, "Chat.InvalidBranchPath");
+    }
+
+    [Fact]
+    public void BranchFromRejectsMissingPersistedAncestor()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(source);
+        ChatMessage assistant = CompleteAssistant(source);
+        SetParentForCorruptionTest(root, ChatMessageId.New());
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom(source, assistant.Id, TestChatFactory.CreatedAt);
+
+        AssertError(result, ErrorType.Unexpected, "Chat.InvalidBranchPath");
+    }
+
+    [Fact]
+    public void BranchFromRejectsAssistantAsPersistedRoot()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage assistant = CompleteAssistant(source);
+        SetParentForCorruptionTest(assistant, null);
+
+        ErrorOr<ChatThread> result = ChatThread.BranchFrom(source, assistant.Id, TestChatFactory.CreatedAt);
+
+        AssertError(result, ErrorType.Unexpected, "Chat.InvalidBranchPath");
+    }
+
+    private static ChatMessage[] GetActivePath(ChatThread chat)
+    {
+        List<ChatMessage> path = [];
+        ChatMessage? cursor = chat.FindMessage(chat.CurrentMessageId);
+
+        while (cursor is not null)
+        {
+            path.Add(cursor);
+            cursor = cursor.ParentMessageId is null ? null : chat.FindMessage(cursor.ParentMessageId);
+        }
+
+        path.Reverse();
+        return [.. path];
+    }
+
+    private static void SetParentForCorruptionTest(ChatMessage message, ChatMessageId? parentMessageId)
+    {
+        typeof(ChatMessage)
+            .GetProperty(nameof(ChatMessage.ParentMessageId))!
+            .SetValue(message, parentMessageId);
+    }
+
     private static ChatMessage BeginAssistant
     (
         ChatThread chat,

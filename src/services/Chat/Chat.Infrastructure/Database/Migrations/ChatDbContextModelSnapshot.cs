@@ -70,6 +70,17 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "BranchOrigin", "Chat.Domain.Chats.ChatThread.BranchOrigin#ChatBranchOrigin", b1 =>
+                        {
+                            b1.Property<Guid>("SourceChatId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("branched_from_chat_id");
+
+                            b1.Property<Guid>("SourceMessageId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("branched_from_message_id");
+                        });
+
                     b.HasKey("Id")
                         .HasName("pk_chats");
 
@@ -77,7 +88,10 @@ namespace Chat.Infrastructure.Database.Migrations
                         .IsDescending(false, true, false)
                         .HasDatabaseName("ix_chats_user_id_updated_at_id");
 
-                    b.ToTable("chats", (string)null);
+                    b.ToTable("chats", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chats_branch_origin_complete", "(branched_from_chat_id is null) = (branched_from_message_id is null)");
+                        });
                 });
 
             modelBuilder.Entity("Chat.Domain.Chats.Entities.ChatMessage", b =>

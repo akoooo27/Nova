@@ -11,7 +11,11 @@ internal sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThr
 {
     public void Configure(EntityTypeBuilder<ChatThread> builder)
     {
-        builder.ToTable("chats");
+        builder.ToTable("chats", table => table.HasCheckConstraint
+        (
+            "ck_chats_branch_origin_complete",
+            "(branched_from_chat_id is null) = (branched_from_message_id is null)"
+        ));
 
         builder.HasKey(x => x.Id);
 
@@ -47,6 +51,27 @@ internal sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThr
                 value => ChatMessageId.FromDatabase(value)
             )
             .IsRequired();
+
+        builder.ComplexProperty(x => x.BranchOrigin, origin =>
+        {
+            origin.IsRequired(false);
+
+            origin.Property(value => value.SourceChatId)
+                .HasConversion
+                (
+                    id => id.Value,
+                    value => ChatId.FromDatabase(value)
+                )
+                .HasColumnName("branched_from_chat_id");
+
+            origin.Property(value => value.SourceMessageId)
+                .HasConversion
+                (
+                    id => id.Value,
+                    value => ChatMessageId.FromDatabase(value)
+                )
+                .HasColumnName("branched_from_message_id");
+        });
 
         builder.Property(x => x.CreatedAt)
             .IsRequired();

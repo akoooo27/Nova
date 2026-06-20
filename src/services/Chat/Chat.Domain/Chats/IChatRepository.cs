@@ -12,6 +12,18 @@ public interface IChatRepository
         CancellationToken cancellationToken = default
     );
 
+    /// <summary>
+    /// Loads an owner-scoped chat with its messages without change tracking. Intended for
+    /// reading a branch source: the returned aggregate is a detached snapshot that must not
+    /// be mutated or persisted, so cloning it never re-saves the source.
+    /// </summary>
+    Task<ChatThread?> GetSnapshotByIdAsync
+    (
+        ChatId id,
+        UserId userId,
+        CancellationToken cancellationToken = default
+    );
+
     void Add(ChatThread chat);
 
     Task<int> DeleteExpiredTemporaryChatsAsync
