@@ -409,38 +409,7 @@ public static Error InvalidBranchPath(ChatMessageId messageId) =>
 
 - [ ] **Step 4: Add immutable message copying**
 
-Add a `FailureReason? failureReason` parameter to the private `ChatMessage` constructor, assign it, and pass `null` from both existing creation factories:
-
-```csharp
-private ChatMessage
-(
-    ChatMessageId id,
-    ChatId chatId,
-    ChatMessageId? parentMessageId,
-    MessageRole role,
-    MessageContent? content,
-    LlmModelId? llmModelId,
-    MessageStatus status,
-    FailureReason? failureReason,
-    DateTimeOffset createdAt,
-    DateTimeOffset? completedAt,
-    SiblingIndex siblingIndex
-) : base(id)
-{
-    ChatId = chatId;
-    ParentMessageId = parentMessageId;
-    Role = role;
-    Content = content;
-    LlmModelId = llmModelId;
-    Status = status;
-    FailureReason = failureReason;
-    CreatedAt = createdAt;
-    CompletedAt = completedAt;
-    SiblingIndex = siblingIndex;
-}
-```
-
-Add this internal factory after `CreateAssistantMessage`:
+Keep the existing private constructor and both creation factories unchanged. Add this internal factory after `CreateAssistantMessage`:
 
 ```csharp
 internal ChatMessage CopyForBranch
@@ -448,21 +417,29 @@ internal ChatMessage CopyForBranch
     ChatMessageId id,
     ChatId chatId,
     ChatMessageId? parentMessageId
-) => new
-(
-    id: id,
-    chatId: chatId,
-    parentMessageId: parentMessageId,
-    role: Role,
-    content: Content,
-    llmModelId: LlmModelId,
-    status: Status,
-    failureReason: FailureReason,
-    createdAt: CreatedAt,
-    completedAt: CompletedAt,
-    siblingIndex: SiblingIndex.First()
-);
+)
+{
+    ChatMessage copy = new
+    (
+        id: id,
+        chatId: chatId,
+        parentMessageId: parentMessageId,
+        role: Role,
+        content: Content,
+        llmModelId: LlmModelId,
+        status: Status,
+        createdAt: CreatedAt,
+        completedAt: CompletedAt,
+        siblingIndex: SiblingIndex.First()
+    );
+
+    copy.FailureReason = FailureReason;
+
+    return copy;
+}
 ```
+
+`FailureReason` remains nullable on the entity because it is populated only for failed assistant messages. The copy factory reads it from the already-valid source message and assigns it internally, avoiding a nullable parameter on the shared constructor while preserving failed messages exactly.
 
 - [ ] **Step 5: Generalize aggregate construction and implement `BranchFrom`**
 
