@@ -78,4 +78,33 @@ public static class ChatErrors
             description:
             $"Message '{parentMessageId.Value}' is still generating; wait for the turn to finish before replying."
         );
+
+    public static Error CannotBranchTemporaryChat(ChatId chatId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotBranchTemporaryChat",
+            description: $"Temporary chat '{chatId.Value}' cannot be branched into a new chat."
+        );
+
+    public static Error BranchPointMustBeAssistant(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.BranchPointMustBeAssistant",
+            description:
+            $"Only an assistant message can be used as a branch point; '{messageId.Value}' is not an assistant message."
+        );
+
+    public static Error CannotBranchWhileGenerating(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotBranchWhileGenerating",
+            description: $"Message '{messageId.Value}' is still generating and cannot be branched yet."
+        );
+
+    public static Error InvalidBranchPath(ChatMessageId messageId) =>
+        Error.Unexpected
+        (
+            code: "Chat.InvalidBranchPath",
+            description: $"The persisted ancestry for message '{messageId.Value}' is invalid."
+        );
 }
