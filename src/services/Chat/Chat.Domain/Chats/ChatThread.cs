@@ -31,13 +31,14 @@ public sealed class ChatThread : AggregateRoot<ChatId>
 
     public bool IsPinned => PinnedAt is not null;
 
+    public ChatBranchOrigin? BranchOrigin { get; private set; }
+
     public IReadOnlyCollection<ChatMessage> Messages => _messages;
 
     private ChatThread()
     {
         // EF Core materialization only
     }
-
 
     private ChatThread
     (
@@ -89,6 +90,113 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             updatedAt: createdAt,
             isTemporary: isTemporary
         );
+    }
+
+    public static ErrorOr<ChatThread> BranchFrom
+    (
+        ChatThread source,
+        ChatMessageId branchPointId,
+        DateTimeOffset createdAt
+    )
+    {
+        if (source.IsTemporary)
+        {
+            return ChatErrors.CannotBranchTemporaryChat(source.Id);
+        }
+
+        ChatMessage? branchPoint = source.FindMessage(branchPointId);
+
+        if (branchPoint is null)
+        {
+            return ChatErrors.MessageNotFound(branchPointId);
+        }
+
+        if (branchPoint.Role != MessageRole.Assistant)
+        {
+            return ChatErrors.BranchPointMustBeAssistant(branchPointId);
+        }
+
+        if (branchPoint.Status == MessageStatus.Generating)
+        {
+            return ChatErrors.CannotBranchWhileGenerating(branchPointId);
+        }
+
+        List<ChatMessage> sourcePath = [];
+        HashSet<ChatMessageId> visited = [];
+        ChatMessage cursor = branchPoint;
+
+        while (true)
+        {
+            if (!visited.Add(cursor.Id))
+            {
+                return ChatErrors.InvalidBranchPath(branchPointId);
+            }
+
+            sourcePath.Add(cursor);
+
+            if (cursor.ParentMessageId is null)
+            {
+                break;
+            }
+
+            ChatMessage? parent = source.FindMessage(cursor.ParentMessageId);
+
+            if (parent is null)
+            {
+                return ChatErrors.InvalidBranchPath(branchPointId);
+            }
+
+            cursor = parent;
+        }
+
+        ChatMessage root = sourcePath[^1];
+
+        if (root.Role != MessageRole.User || root.ParentMessageId is not null)
+        {
+            return ChatErrors.InvalidBranchPath(branchPointId);
+        }
+
+        sourcePath.Reverse();
+
+        ChatId branchId = ChatId.New();
+        Dictionary<ChatMessageId, ChatMessageId> copiedIds = sourcePath.ToDictionary
+        (
+            message => message.Id,
+            _ => ChatMessageId.New()
+        );
+
+        List<ChatMessage> copiedMessages = sourcePath
+            .Select(message => message.CopyForBranch
+            (
+                id: copiedIds[message.Id],
+                chatId: branchId,
+                parentMessageId: message.ParentMessageId is null
+                    ? null
+                    : copiedIds[message.ParentMessageId]
+            ))
+            .ToList();
+
+        ChatThread branch = new
+        (
+            id: branchId,
+            userId: source.UserId,
+            title: ChatTitle.CreateBranch(source.Title),
+            root: root,
+            createdAt: createdAt,
+            updatedAt: createdAt,
+            isTemporary: source.IsTemporary
+        );
+
+        branch.BranchOrigin = ChatBranchOrigin.Create
+        (
+            sourceChatId: source.Id,
+            sourceMessageId: branchPointId
+        );
+        branch._messages.AddRange(copiedMessages);
+
+        branch.SetHead(copiedIds[branchPointId], createdAt);
+
+        return branch;
     }
 
     /// <summary>

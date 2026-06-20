@@ -14,5 +14,13 @@ internal sealed class CreateChatCommandValidator : AbstractValidator<CreateChatC
 
         RuleFor(x => x.LlmModelId)
             .NotEmpty();
+        
+        RuleFor(x => x.BranchingFromChatId)
+            .NotEmpty()
+            .When(x => x.BranchingFromChatId.HasValue || x.BranchingFromMessageId.HasValue);
+
+        RuleFor(x => x.BranchingFromMessageId)
+            .NotEmpty()
+            .When(x => x.BranchingFromChatId.HasValue || x.BranchingFromMessageId.HasValue);
     }
 }

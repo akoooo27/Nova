@@ -128,4 +128,30 @@ public sealed class ChatMessage : Entity<ChatMessageId>
 
         return Result.Success;
     }
+
+    internal ChatMessage CopyForBranch
+    (
+        ChatMessageId id,
+        ChatId chatId,
+        ChatMessageId? parentMessageId
+    )
+    {
+        ChatMessage copy = new
+        (
+            id: id,
+            chatId: chatId,
+            parentMessageId: parentMessageId,
+            role: Role,
+            content: Content,
+            llmModelId: LlmModelId,
+            status: Status,
+            createdAt: CreatedAt,
+            completedAt: CompletedAt,
+            siblingIndex: SiblingIndex.First()
+        );
+
+        copy.FailureReason = FailureReason;
+
+        return copy;
+    }
 }

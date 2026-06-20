@@ -38,6 +38,15 @@ public sealed record ChatTitle
         return new ChatTitle(trimmed);
     }
 
+    public static ChatTitle CreateBranch(ChatTitle source)
+    {
+        const string prefix = "Branch: ";
+
+        int sourceLength = Math.Min(source.Value.Length, MaxLength - prefix.Length);
+
+        return new ChatTitle($"{prefix}{source.Value[..sourceLength]}");
+    }
+
     public static ChatTitle FromDatabase(string value)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > MaxLength)

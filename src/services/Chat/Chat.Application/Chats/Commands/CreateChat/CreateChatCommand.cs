@@ -12,5 +12,7 @@ public sealed record CreateChatCommand
     string Message,
     Guid LlmModelId,
     TurnGenerationOptions? GenerationOptions = null,
-    bool IsTemporary = false
+    bool IsTemporary = false,
+    Guid? BranchingFromChatId = null,
+    Guid? BranchingFromMessageId = null
 ) : ICommand<ErrorOr<TurnStartedResult>>;

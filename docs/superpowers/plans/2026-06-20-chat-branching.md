@@ -441,32 +441,9 @@ internal ChatMessage CopyForBranch
 
 `FailureReason` remains nullable on the entity because it is populated only for failed assistant messages. The copy factory reads it from the already-valid source message and assigns it internally, avoiding a nullable parameter on the shared constructor while preserving failed messages exactly.
 
-- [ ] **Step 5: Generalize aggregate construction and implement `BranchFrom`**
+- [ ] **Step 5: Preserve aggregate construction and implement `BranchFrom`**
 
-Replace the private `ChatThread` constructor with a constructor that accepts the whole initial path:
-
-```csharp
-private ChatThread
-(
-    ChatId id,
-    UserId userId,
-    ChatTitle title,
-    IReadOnlyCollection<ChatMessage> messages,
-    ChatMessageId currentMessageId,
-    DateTimeOffset createdAt,
-    DateTimeOffset updatedAt,
-    bool isTemporary
-) : base(id)
-{
-    UserId = userId;
-    Title = title;
-    CurrentMessageId = currentMessageId;
-    CreatedAt = createdAt;
-    UpdatedAt = updatedAt;
-    IsTemporary = isTemporary;
-    _messages = [.. messages];
-}
-```
+Keep the existing private `ChatThread` constructor unchanged. It remains the single constructor for a new thread and initializes the aggregate with one root message.
 
 Add the aggregate property:
 
@@ -474,7 +451,7 @@ Add the aggregate property:
 public ChatBranchOrigin? BranchOrigin { get; private set; }
 ```
 
-Update `Create` to call the generalized constructor with `messages: [root]` and `currentMessageId: root.Id`. Do not pass or assign branch ancestry during normal construction; `BranchOrigin` remains null by default.
+Keep `Create` unchanged. It continues to create a normal thread with one root user message, while `BranchOrigin` remains null by default.
 
 Add this factory after `Create`:
 
@@ -563,20 +540,21 @@ public static ErrorOr<ChatThread> BranchFrom
         id: branchId,
         userId: source.UserId,
         title: ChatTitle.CreateBranch(source.Title),
-        messages: copiedMessages,
-        currentMessageId: copiedIds[branchPoint.Id],
+        root: copiedMessages[0],
         createdAt: createdAt,
         updatedAt: createdAt,
         isTemporary: source.IsTemporary
     );
 
+    branch._messages.AddRange(copiedMessages.Skip(1));
+    branch.SetHead(copiedIds[branchPoint.Id], createdAt);
     branch.BranchOrigin = ChatBranchOrigin.Create(source.Id, branchPoint.Id);
 
     return branch;
 }
 ```
 
-Assigning `BranchOrigin` inside `BranchFrom` keeps ancestry out of the general constructor and makes the branch factory the only domain operation capable of creating a thread with provenance.
+The existing constructor establishes the copied root exactly as it establishes a normal root. Because `BranchFrom` is a `ChatThread` factory, it can append the remaining already-validated copies, move the head, and assign `BranchOrigin` through private members before exposing the new aggregate. This preserves the constructor and makes the branch factory the only domain operation capable of creating a thread with provenance.
 
 - [ ] **Step 6: Run all chat domain tests**
 
