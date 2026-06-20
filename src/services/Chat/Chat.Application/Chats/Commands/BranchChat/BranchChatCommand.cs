@@ -5,12 +5,13 @@ using ErrorOr;
 
 using Mediator;
 
-namespace Chat.Application.Chats.Commands.CreateChat;
+namespace Chat.Application.Chats.Commands.BranchChat;
 
-public sealed record CreateChatCommand
+public sealed record BranchChatCommand
 (
+    Guid SourceChatId,
+    Guid SourceMessageId,
     string Message,
     Guid LlmModelId,
-    TurnGenerationOptions? GenerationOptions = null,
-    bool IsTemporary = false
+    TurnGenerationOptions? GenerationOptions = null
 ) : ICommand<ErrorOr<TurnStartedResult>>;

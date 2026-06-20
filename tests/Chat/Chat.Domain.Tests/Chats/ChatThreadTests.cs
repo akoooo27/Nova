@@ -639,7 +639,8 @@ public sealed class ChatThreadTests
         ChatThread branch = result.Value;
         ChatMessage[] copiedPath = GetActivePath(branch);
         Assert.Equal(sourcePath.Length, copiedPath.Length);
-        Assert.DoesNotContain(copiedPath, copied => source.Messages.Any(original => original.Id == copied.Id));
+        Assert.Equal(sourcePath.Length, branch.Messages.Count);
+        Assert.DoesNotContain(branch.Messages, copied => source.Messages.Any(original => original.Id == copied.Id));
 
         for (int index = 0; index < sourcePath.Length; index++)
         {

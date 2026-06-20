@@ -181,7 +181,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             id: branchId,
             userId: source.UserId,
             title: ChatTitle.CreateBranch(source.Title),
-            root: root,
+            root: copiedMessages[0],
             createdAt: createdAt,
             updatedAt: createdAt,
             isTemporary: source.IsTemporary
@@ -192,7 +192,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             sourceChatId: source.Id,
             sourceMessageId: branchPointId
         );
-        branch._messages.AddRange(copiedMessages);
+        branch._messages.AddRange(copiedMessages.Skip(1));
 
         branch.SetHead(copiedIds[branchPointId], createdAt);
 

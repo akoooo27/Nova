@@ -16,6 +16,14 @@ internal sealed class ChatRepository(ChatDbContext db) : IChatRepository
             .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, cancellationToken);
     }
 
+    public async Task<ChatThread?> GetSnapshotByIdAsync(ChatId id, UserId userId, CancellationToken cancellationToken = default)
+    {
+        return await db.ChatThreads
+            .AsNoTracking()
+            .Include(x => x.Messages)
+            .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, cancellationToken);
+    }
+
     public void Add(ChatThread chat)
     {
         db.ChatThreads.Add(chat);
