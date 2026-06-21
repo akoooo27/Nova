@@ -778,6 +778,87 @@ public sealed class ChatThreadTests
         AssertError(result, ErrorType.Unexpected, "Chat.InvalidBranchPath");
     }
 
+    [Fact]
+    public void ValidateShareAtRejectsTemporaryChat()
+    {
+        ChatThread temporary = TestChatFactory.CreateThread(isTemporary: true);
+        ChatMessage node = CompleteAssistant(temporary);
+
+        AssertError(temporary.ValidateShareAt(node.Id), ErrorType.Conflict, "Chat.CannotShareTemporaryChat");
+    }
+
+    [Fact]
+    public void ValidateShareAtReturnsMessageNotFoundForUnknownNode()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        _ = CompleteAssistant(chat);
+
+        AssertError(chat.ValidateShareAt(ChatMessageId.New()), ErrorType.NotFound, "Chat.MessageNotFound");
+    }
+
+    [Fact]
+    public void ValidateShareAtRejectsGeneratingNode()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage generating = BeginAssistant(chat);
+
+        AssertError(chat.ValidateShareAt(generating.Id), ErrorType.Conflict, "Chat.CannotShareGeneratingMessage");
+    }
+
+    [Fact]
+    public void ValidateShareAtAcceptsCompletedRootUserMessage()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(chat);
+
+        Assert.False(chat.ValidateShareAt(root.Id).IsError);
+    }
+
+    [Fact]
+    public void ValidateShareAtAcceptsHistoricalTerminalNodeThatIsNotCurrentHead()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage historical = CompleteAssistant(chat);
+        ChatMessage followUp = AddUser(chat, historical.Id, TestChatFactory.CreatedAt.AddMinutes(3));
+        ChatMessage current = CompleteAssistant(chat, followUp.Id, TestChatFactory.CreatedAt.AddMinutes(4));
+
+        Assert.NotEqual(historical.Id, chat.CurrentMessageId);
+        Assert.Equal(current.Id, chat.CurrentMessageId);
+        Assert.False(chat.ValidateShareAt(historical.Id).IsError);
+    }
+
+    [Fact]
+    public void ValidateShareAtRejectsCyclicPersistedPath()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(chat);
+        ChatMessage assistant = CompleteAssistant(chat);
+        SetParentForCorruptionTest(root, assistant.Id);
+
+        AssertError(chat.ValidateShareAt(assistant.Id), ErrorType.Unexpected, "Chat.InvalidSharePath");
+    }
+
+    [Fact]
+    public void ValidateShareAtRejectsMissingPersistedAncestor()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(chat);
+        ChatMessage assistant = CompleteAssistant(chat);
+        SetParentForCorruptionTest(root, ChatMessageId.New());
+
+        AssertError(chat.ValidateShareAt(assistant.Id), ErrorType.Unexpected, "Chat.InvalidSharePath");
+    }
+
+    [Fact]
+    public void ValidateShareAtRejectsAssistantAsPersistedRoot()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage assistant = CompleteAssistant(chat);
+        SetParentForCorruptionTest(assistant, null);
+
+        AssertError(chat.ValidateShareAt(assistant.Id), ErrorType.Unexpected, "Chat.InvalidSharePath");
+    }
+
     private static ChatMessage[] GetActivePath(ChatThread chat)
     {
         List<ChatMessage> path = [];

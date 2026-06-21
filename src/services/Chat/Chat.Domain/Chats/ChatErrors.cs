@@ -107,4 +107,25 @@ public static class ChatErrors
             code: "Chat.InvalidBranchPath",
             description: $"The persisted ancestry for message '{messageId.Value}' is invalid."
         );
+
+    public static Error CannotShareTemporaryChat(ChatId chatId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotShareTemporaryChat",
+            description: $"Temporary chat '{chatId.Value}' cannot be shared."
+        );
+
+    public static Error CannotShareGeneratingMessage(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotShareGeneratingMessage",
+            description: $"Generating message '{messageId.Value}' cannot be shared."
+        );
+
+    public static Error InvalidSharePath(ChatMessageId messageId) =>
+        Error.Unexpected
+        (
+            code: "Chat.InvalidSharePath",
+            description: $"The persisted ancestry for shared message '{messageId.Value}' is invalid."
+        );
 }

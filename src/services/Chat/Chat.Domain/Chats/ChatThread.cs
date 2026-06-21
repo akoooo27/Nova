@@ -428,6 +428,43 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         return Result.Success;
     }
 
+    /// <summary>
+    /// Validates that the selected message and its ancestor path can be shared.
+    /// The selected message may be historical and does not need to be the chat's current head.
+    /// This operation does not modify the chat.
+    /// </summary>
+    public ErrorOr<Success> ValidateShareAt(ChatMessageId messageId)
+    {
+        if (IsTemporary)
+            return ChatErrors.CannotShareTemporaryChat(Id);
+
+        ChatMessage? cursor = FindMessage(messageId);
+
+        if (cursor is null)
+            return ChatErrors.MessageNotFound(messageId);
+
+        if (cursor.Status == MessageStatus.Generating)
+            return ChatErrors.CannotShareGeneratingMessage(messageId);
+
+        HashSet<ChatMessageId> visited = [];
+
+        while (cursor.ParentMessageId is not null)
+        {
+            if (!visited.Add(cursor.Id))
+                return ChatErrors.InvalidSharePath(messageId);
+
+            cursor = FindMessage(cursor.ParentMessageId);
+
+            if (cursor is null)
+                return ChatErrors.InvalidSharePath(messageId);
+        }
+
+        if (!visited.Add(cursor.Id) || cursor.Role != MessageRole.User || cursor.Status != MessageStatus.Completed)
+            return ChatErrors.InvalidSharePath(messageId);
+
+        return Result.Success;
+    }
+
     public void Pin(DateTimeOffset pinnedAt) =>
         PinnedAt ??= pinnedAt;
 
