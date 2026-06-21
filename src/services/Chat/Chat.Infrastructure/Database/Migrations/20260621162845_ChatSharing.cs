@@ -15,7 +15,9 @@ namespace Chat.Infrastructure.Database.Migrations
             migrationBuilder.AddUniqueConstraint(
                 name: "ak_chat_messages_chat_id_id",
                 table: "chat_messages",
+#pragma warning disable CA1861
                 columns: new[] { "chat_id", "id" });
+#pragma warning restore CA1861
 
             migrationBuilder.CreateTable(
                 name: "shared_chats",
@@ -35,7 +37,9 @@ namespace Chat.Infrastructure.Database.Migrations
                         name: "fk_shared_chats_chat_messages_chat_id_current_message_id",
                         columns: x => new { x.chat_id, x.current_message_id },
                         principalTable: "chat_messages",
+#pragma warning disable CA1861
                         principalColumns: new[] { "chat_id", "id" },
+#pragma warning restore CA1861
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "fk_shared_chats_chats_chat_id",
@@ -48,14 +52,20 @@ namespace Chat.Infrastructure.Database.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_shared_chats_chat_id_current_message_id",
                 table: "shared_chats",
+#pragma warning disable CA1861
                 columns: new[] { "chat_id", "current_message_id" },
+#pragma warning restore CA1861
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_shared_chats_user_id_created_at_id",
                 table: "shared_chats",
+#pragma warning disable CA1861
                 columns: new[] { "user_id", "created_at", "id" },
+#pragma warning restore CA1861
+#pragma warning disable CA1861
                 descending: new[] { false, true, true });
+#pragma warning restore CA1861
         }
 
         /// <inheritdoc />

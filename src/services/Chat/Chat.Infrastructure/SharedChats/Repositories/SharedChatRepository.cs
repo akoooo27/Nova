@@ -10,6 +10,21 @@ namespace Chat.Infrastructure.SharedChats.Repositories;
 
 internal sealed class SharedChatRepository(ChatDbContext db) : ISharedChatRepository
 {
+    public async Task<SharedChat?> GetByIdAsync
+    (
+        SharedChatId id,
+        UserId userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await db.SharedChats
+            .FirstOrDefaultAsync
+            (
+                x => x.Id == id && x.UserId == userId,
+                cancellationToken
+            );
+    }
+
     public async Task<SharedChat?> GetBySourceAsync
     (
         UserId userId,
@@ -47,18 +62,9 @@ internal sealed class SharedChatRepository(ChatDbContext db) : ISharedChatReposi
         return affected == 1;
     }
 
-    public async Task<bool> DeleteAsync
-    (
-        SharedChatId id,
-        UserId userId,
-        CancellationToken cancellationToken = default
-    )
+    public void Remove(SharedChat sharedChat)
     {
-        int deleted = await db.SharedChats
-            .Where(x => x.Id == id && x.UserId == userId)
-            .ExecuteDeleteAsync(cancellationToken);
-
-        return deleted > 0;
+        db.SharedChats.Remove(sharedChat);
     }
 
     public async Task<int> DeleteAllAsync(UserId userId, CancellationToken cancellationToken = default)

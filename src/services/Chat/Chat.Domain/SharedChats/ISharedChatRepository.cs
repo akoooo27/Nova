@@ -6,6 +6,13 @@ namespace Chat.Domain.SharedChats;
 
 public interface ISharedChatRepository
 {
+    Task<SharedChat?> GetByIdAsync
+    (
+        SharedChatId id,
+        UserId userId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<SharedChat?> GetBySourceAsync
     (
         UserId userId,
@@ -16,12 +23,7 @@ public interface ISharedChatRepository
 
     Task<bool> TryAddAsync(SharedChat sharedChat, CancellationToken cancellationToken = default);
 
-    Task<bool> DeleteAsync
-    (
-        SharedChatId id,
-        UserId userId,
-        CancellationToken cancellationToken = default
-    );
+    void Remove(SharedChat sharedChat);
 
     Task<int> DeleteAllAsync(UserId userId, CancellationToken cancellationToken = default);
 }
