@@ -12,6 +12,8 @@ using Chat.Application.Chats.Queries.GetChat;
 using Chat.Application.Chats.Queries.GetChats;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
+using Chat.Application.SharedChats.Queries.GetPublicSharedChat;
+using Chat.Application.SharedChats.Queries.GetSharedChats;
 using Chat.Application.Turns;
 using Chat.Application.Turns.Tools;
 using Chat.Domain.Chats;
@@ -31,6 +33,7 @@ using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
 using Chat.Infrastructure.Options;
 using Chat.Infrastructure.ProviderLogos;
+using Chat.Infrastructure.SharedChats.Readers;
 using Chat.Infrastructure.SharedChats.Repositories;
 using Chat.Infrastructure.Turns;
 using Chat.Infrastructure.Turns.Consumers;
@@ -160,6 +163,9 @@ public static class DependencyInjection
 
         services.AddScoped<IChatListReader, ChatListReader>();
         services.AddScoped<IChatDetailReader, ChatDetailReader>();
+
+        services.AddScoped<ISharedChatListReader, SharedChatListReader>();
+        services.AddScoped<IPublicSharedChatReader, PublicSharedChatReader>();
 
         return services;
     }
