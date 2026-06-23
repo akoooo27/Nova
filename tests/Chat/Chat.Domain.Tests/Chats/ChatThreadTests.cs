@@ -342,6 +342,129 @@ public sealed class ChatThreadTests
     }
 
     [Fact]
+    public void EditUserMessagePreservesOriginalDescendants()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage assistant = CompleteAssistant(chat);
+        ChatMessage original = AddUser
+        (
+            chat,
+            assistant.Id,
+            TestChatFactory.CreatedAt.AddMinutes(2),
+            "Original"
+        );
+        ChatMessage descendant = CompleteAssistant
+        (
+            chat,
+            original.Id,
+            TestChatFactory.CreatedAt.AddMinutes(3)
+        );
+
+        ErrorOr<ChatMessage> result = chat.EditUserMessage
+        (
+            messageId: original.Id,
+            content: TestChatFactory.CreateContent("Edited"),
+            createdAt: TestChatFactory.CreatedAt.AddMinutes(5)
+        );
+
+        Assert.False(result.IsError);
+        Assert.Same(original, chat.FindMessage(original.Id));
+        Assert.Same(descendant, chat.FindMessage(descendant.Id));
+        Assert.Equal(original.Id, descendant.ParentMessageId);
+        Assert.Equal(original.ParentMessageId, result.Value.ParentMessageId);
+    }
+
+    [Fact]
+    public void EditUserMessageReturnsEditTargetNotOnActivePathForInactiveUserTarget()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage assistant = CompleteAssistant(chat);
+        ChatMessage inactiveUser = AddUser
+        (
+            chat,
+            assistant.Id,
+            TestChatFactory.CreatedAt.AddMinutes(2),
+            "Inactive"
+        );
+        _ = AddUser
+        (
+            chat,
+            assistant.Id,
+            TestChatFactory.CreatedAt.AddMinutes(3),
+            "Active"
+        );
+
+        ErrorOr<ChatMessage> result = chat.EditUserMessage
+        (
+            messageId: inactiveUser.Id,
+            content: TestChatFactory.CreateContent("Edited inactive"),
+            createdAt: TestChatFactory.CreatedAt.AddMinutes(4)
+        );
+
+        AssertError(result, ErrorType.Conflict, "Chat.EditTargetNotOnActivePath");
+    }
+
+    [Fact]
+    public void EditUserMessageReturnsCannotEditWhileGeneratingWhenActivePathIsGenerating()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(chat);
+        _ = BeginAssistant(chat);
+
+        ErrorOr<ChatMessage> result = chat.EditUserMessage
+        (
+            messageId: root.Id,
+            content: TestChatFactory.CreateContent("Edited while generating"),
+            createdAt: TestChatFactory.CreatedAt.AddMinutes(2)
+        );
+
+        AssertError(result, ErrorType.Conflict, "Chat.CannotEditWhileGenerating");
+    }
+
+    [Fact]
+    public void EditUserMessageAllowsEditAfterActiveAssistantFailed()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(chat);
+        ChatMessage assistant = BeginAssistant(chat);
+        ErrorOr<ChatMessage> failure = chat.FailAssistantMessage
+        (
+            messageId: assistant.Id,
+            reason: TestChatFactory.CreateFailureReason(),
+            failedAt: TestChatFactory.CreatedAt.AddMinutes(2)
+        );
+        Assert.False(failure.IsError);
+
+        ErrorOr<ChatMessage> result = chat.EditUserMessage
+        (
+            messageId: root.Id,
+            content: TestChatFactory.CreateContent("Edited after failure"),
+            createdAt: TestChatFactory.CreatedAt.AddMinutes(3)
+        );
+
+        Assert.False(result.IsError);
+        Assert.Equal(result.Value.Id, chat.CurrentMessageId);
+    }
+
+    [Fact]
+    public void EditUserMessageAllowsEditingTemporaryChat()
+    {
+        ChatThread chat = TestChatFactory.CreateThread(isTemporary: true);
+        ChatMessage root = TestChatFactory.RootMessage(chat);
+
+        ErrorOr<ChatMessage> result = chat.EditUserMessage
+        (
+            messageId: root.Id,
+            content: TestChatFactory.CreateContent("Edited temporary chat"),
+            createdAt: TestChatFactory.CreatedAt.AddMinutes(1)
+        );
+
+        Assert.False(result.IsError);
+        Assert.True(chat.IsTemporary);
+        Assert.Equal(result.Value.Id, chat.CurrentMessageId);
+    }
+
+    [Fact]
     public void EditUserMessageReturnsEditTargetMustBeUserForAssistantTarget()
     {
         ChatThread chat = TestChatFactory.CreateThread();

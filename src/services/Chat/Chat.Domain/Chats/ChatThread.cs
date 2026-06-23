@@ -328,8 +328,9 @@ public sealed class ChatThread : AggregateRoot<ChatId>
     }
 
     /// <summary>
-    /// Creates an edited sibling of a user message under the same parent (a new branch),
+    /// Creates an edited sibling of an active-path user message under the same parent (a new branch),
     /// leaving the original untouched. Editing a root user message creates another root sibling.
+    /// Editing is rejected while an assistant on the active path is still generating.
     /// </summary>
     public ErrorOr<ChatMessage> EditUserMessage
     (
@@ -348,6 +349,21 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         if (target.Role != MessageRole.User)
         {
             return ChatErrors.EditTargetMustBeUser(messageId);
+        }
+
+        List<ChatMessage> activePath = GetActivePath();
+
+        if (activePath.All(x => x.Id != messageId))
+        {
+            return ChatErrors.EditTargetNotOnActivePath(messageId);
+        }
+
+        ChatMessage? generatingAssistant = activePath
+            .FirstOrDefault(x => x is { Role: MessageRole.Assistant, Status: MessageStatus.Generating });
+
+        if (generatingAssistant is not null)
+        {
+            return ChatErrors.CannotEditWhileGenerating(generatingAssistant.Id);
         }
 
         ChatMessage sibling = ChatMessage.CreateUserMessage
@@ -494,5 +510,26 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         int count = _messages.Count(m => m.ParentMessageId == parentMessageId);
 
         return SiblingIndex.Next(count);
+    }
+
+    private List<ChatMessage> GetActivePath()
+    {
+        List<ChatMessage> activePath = [];
+
+        ChatMessage? cursor = FindMessage(CurrentMessageId);
+
+        while (cursor is not null)
+        {
+            activePath.Add(cursor);
+
+            if (cursor.ParentMessageId is null)
+            {
+                break;
+            }
+
+            cursor = FindMessage(cursor.ParentMessageId);
+        }
+
+        return activePath;
     }
 }

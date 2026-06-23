@@ -128,4 +128,20 @@ public static class ChatErrors
             code: "Chat.InvalidSharePath",
             description: $"The persisted ancestry for shared message '{messageId.Value}' is invalid."
         );
+
+    public static Error EditTargetNotOnActivePath(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.EditTargetNotOnActivePath",
+            description:
+            $"User message '{messageId.Value}' is not on the active conversation path and cannot be edited."
+        );
+
+    public static Error CannotEditWhileGenerating(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotEditWhileGenerating",
+            description:
+            $"Active-path assistant message '{messageId.Value}' is still generating; wait for the turn to finish before editing."
+        );
 }
