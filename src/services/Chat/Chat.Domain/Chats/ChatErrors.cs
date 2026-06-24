@@ -128,4 +128,18 @@ public static class ChatErrors
             code: "Chat.InvalidSharePath",
             description: $"The persisted ancestry for shared message '{messageId.Value}' is invalid."
         );
+
+    public static Error StopTargetMustBeAssistant(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.StopTargetMustBeAssistant",
+            description: $"Only assistant messages can be stopped; '{messageId.Value}' is not an assistant message."
+        );
+
+    public static Error CannotStopNonGenerating(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotStopNonGenerating",
+            description: $"Message '{messageId.Value}' is not generating and cannot be stopped."
+        );
 }

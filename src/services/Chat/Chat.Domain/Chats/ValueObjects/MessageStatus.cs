@@ -5,5 +5,6 @@ public enum MessageStatus
 {
     Generating = 1,
     Completed = 2,
-    Failed = 3
+    Failed = 3,
+    Stopped = 4
 }

@@ -24,7 +24,7 @@ internal sealed class RedisStreamTokenPublisher(IConnectionMultiplexer redis) : 
             [new NameValueEntry("data", TurnEventSerializer.Serialize(turnEvent))]
         );
 
-        if (turnEvent is DoneEvent or FailedEvent)
+        if (turnEvent is DoneEvent or FailedEvent or StoppedEvent)
         {
             await db.KeyExpireAsync(key, CompletedStreamTtl);
         }

@@ -76,6 +76,7 @@ public static class DependencyInjection
             .AddReaders()
             .AddMessagingServices(configuration)
             .AddTurnStreamReading()
+            .AddTurnStopSignal()
             .AddProviderLogoStorage(configuration);
 
     public static IServiceCollection AddTurnWorkerInfrastructure
@@ -86,6 +87,7 @@ public static class DependencyInjection
         services
             .AddSharedInfrastructure()
             .AddDatabaseServices()
+            .AddTurnStopSignal()
             .AddTurnPipeline(configuration)
             .AddTurnWorkerMessaging(configuration);
 
@@ -225,6 +227,13 @@ public static class DependencyInjection
     private static IServiceCollection AddTurnStreamReading(this IServiceCollection services)
     {
         services.AddSingleton<ITurnStreamReader, RedisTurnStreamReader>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddTurnStopSignal(this IServiceCollection services)
+    {
+        services.AddSingleton<ITurnStopSignal, RedisTurnStopSignal>();
 
         return services;
     }

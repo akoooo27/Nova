@@ -21,6 +21,7 @@ public static class TurnEventSerializer
         DoneEvent => "done",
         FailedEvent => "failed",
         ReasoningEvent => "reasoning",
+        StoppedEvent => "stopped",
         _ => throw new ArgumentOutOfRangeException(nameof(turnEvent), turnEvent.GetType().Name, "Unknown turn event type.")
     };
 }

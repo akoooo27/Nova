@@ -17,6 +17,7 @@ public sealed class ChatTurnOrchestratorTests
 
     private readonly FakeChatRepository _chats = new();
     private readonly RecordingTokenPublisher _publisher = new();
+    private readonly FakeTurnStopSignal _stopSignal = new();
     private readonly TurnFakeUnitOfWork _unitOfWork = new();
 
     [Fact]
@@ -89,6 +90,43 @@ public sealed class ChatTurnOrchestratorTests
         Assert.IsType<FailedEvent>(_publisher.Events[^1]);
     }
 
+    [Fact]
+    public async Task RunTurnAsyncWhenStopRequestedStoresPartialContentAndPublishesStoppedEvent()
+    {
+        (_, ChatMessage assistant, TurnRequested job) = SeedPendingTurn();
+        _stopSignal.EnqueueResponse(false);
+        _stopSignal.EnqueueResponse(false);
+        _stopSignal.EnqueueResponse(true);
+
+        FakeAgentRunner runner = new(ctx => FakeAgentRunner.Tokens(ctx.TurnId, ["Hello", " world", " ignored"]));
+
+        await CreateOrchestrator(runner).RunTurnAsync(job, CancellationToken.None);
+
+        Assert.Equal(MessageStatus.Stopped, assistant.Status);
+        Assert.Equal("Hello world", assistant.Content!.Value);
+        Assert.Equal(1, _unitOfWork.SaveCount);
+        Assert.Equal(1, _publisher.ResetCount);
+        Assert.Equal(2, _publisher.Events.OfType<TokenEvent>().Count());
+        Assert.IsType<StoppedEvent>(_publisher.Events[^1]);
+    }
+
+    [Fact]
+    public async Task RunTurnAsyncWhenStopRequestedBeforeTextMarksStoppedWithNullContent()
+    {
+        (_, ChatMessage assistant, TurnRequested job) = SeedPendingTurn();
+        _stopSignal.EnqueueResponse(true);
+
+        FakeAgentRunner runner = new(ctx => FakeAgentRunner.Tokens(ctx.TurnId, ["ignored"]));
+
+        await CreateOrchestrator(runner).RunTurnAsync(job, CancellationToken.None);
+
+        Assert.Equal(MessageStatus.Stopped, assistant.Status);
+        Assert.Null(assistant.Content);
+        Assert.Equal(1, _unitOfWork.SaveCount);
+        Assert.Empty(_publisher.Events.OfType<TokenEvent>());
+        Assert.IsType<StoppedEvent>(_publisher.Events[^1]);
+    }
+
     private (ChatThread Thread, ChatMessage Assistant, TurnRequested Job) SeedPendingTurn()
     {
         ChatThread thread = ChatThread.Create
@@ -125,6 +163,7 @@ public sealed class ChatTurnOrchestratorTests
         publisher: _publisher,
         contextBuilder: new FakeContextBuilder(),
         agentRunner: runner,
+        stopSignal: _stopSignal,
         unitOfWork: _unitOfWork,
         dateTimeProvider: new FakeDateTimeProvider(Now),
         logger: NullLogger<ChatTurnOrchestrator>.Instance

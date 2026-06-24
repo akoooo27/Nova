@@ -50,14 +50,14 @@ public sealed class ContextBuilder(ILlmProviderRepository providers) : IContextB
                 break;
             }
 
-            if (message.Content is not null && message.Status == MessageStatus.Completed)
+            if (HasContextContent(message) && message.Content is { } content)
             {
                 TurnMessage turnMessage = new
                 (
                     Role: message.Role == MessageRole.User
                         ? TurnRole.User
                         : TurnRole.Assistant,
-                    Text: message.Content.Value
+                    Text: content.Value
                 );
 
                 history.Add(turnMessage);
@@ -79,4 +79,8 @@ public sealed class ContextBuilder(ILlmProviderRepository providers) : IContextB
             Messages: history
         );
     }
+
+    private static bool HasContextContent(ChatMessage message) =>
+        message.Content is not null
+        && message.Status is MessageStatus.Completed or MessageStatus.Stopped;
 }
