@@ -3,6 +3,7 @@ using Amazon.S3;
 using ArcadeDotnet;
 
 using Chat.Application.Abstractions.Analytics;
+using Chat.Application.Abstractions.Arcade;
 using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.Gmail;
 using Chat.Application.Abstractions.ModelCatalog;
@@ -82,7 +83,8 @@ public static class DependencyInjection
             .AddReaders()
             .AddMessagingServices(configuration)
             .AddTurnStreamReading()
-            .AddProviderLogoStorage(configuration);
+            .AddProviderLogoStorage(configuration)
+            .AddArcadeAuth(configuration);
 
     public static IServiceCollection AddTurnWorkerInfrastructure
     (
@@ -235,6 +237,33 @@ public static class DependencyInjection
         return services;
     }
 
+    // Arcade authorization (options, client, auth client). Shared by the API host,
+    // which exposes the user-verification endpoint, and the turn pipeline, which
+    // executes Arcade-backed tools.
+    private static IServiceCollection AddArcadeAuth(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<ArcadeOptions>()
+            .Bind(configuration.GetSection(ArcadeOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton(sp =>
+        {
+            ArcadeOptions options = sp.GetRequiredService<IOptions<ArcadeOptions>>().Value;
+
+            return new ArcadeClient
+            {
+                APIKey = options.ApiKey,
+                BaseUrl = options.BaseUrl
+            };
+        });
+
+        services.AddScoped<IArcadeAuthClient, ArcadeAuthClient>();
+
+        return services;
+    }
+
     private static IServiceCollection AddTurnPipeline(this IServiceCollection services, IConfiguration configuration)
     {
         services
@@ -279,22 +308,7 @@ public static class DependencyInjection
         services.AddScoped<IAgentTool, ReadUrlTool>();
 
         // Gmail tools (Arcade). Delete this block to remove Gmail tool access entirely.
-        services
-            .AddOptions<ArcadeOptions>()
-            .Bind(configuration.GetSection(ArcadeOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
-        services.AddSingleton(sp =>
-        {
-            ArcadeOptions options = sp.GetRequiredService<IOptions<ArcadeOptions>>().Value;
-
-            return new ArcadeClient
-            {
-                APIKey = options.ApiKey,
-                BaseUrl = options.BaseUrl
-            };
-        });
+        services.AddArcadeAuth(configuration);
 
         services.AddScoped<IArcadeToolExecutor, ArcadeToolExecutor>();
         services.AddScoped<IGmailToolClient, ArcadeGmailToolClient>();

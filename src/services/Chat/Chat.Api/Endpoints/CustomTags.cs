@@ -9,4 +9,6 @@ internal static class CustomTags
     public const string Chats = "Chats";
 
     public const string SharedChats = "Shared Chats";
+
+    public const string Integrations = "Integrations";
 }

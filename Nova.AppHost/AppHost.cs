@@ -98,6 +98,9 @@ IResourceBuilder<ParameterResource> arcadeApiKey = builder.AddParameter("arcade-
 IResourceBuilder<ParameterResource> postHogProjectApiKey =
     builder.AddParameter("posthog-project-api-key", secret: true);
 
+// Chat.Api hosts the Arcade custom verifier route, so it needs the Arcade client too.
+chatApi.WithEnvironment("Arcade__ApiKey", arcadeApiKey);
+
 builder.AddProject<Projects.Chat_TurnWorker>("chat-turn-worker")
     .WithEnvironment("Agent__ApiKey", agentApiKey)
     .WithEnvironment("Exa__ApiKey", exaApiKey)

@@ -16,7 +16,7 @@ internal sealed class ArcadeToolExecutor(ArcadeClient client) : IArcadeToolExecu
     )
     {
         _ = cancellationToken; // Arcade SDK methods shown do not currently accept CT.
-        
+
         // Remove this code, when real auth is added
         await client.Tools.Authorize(new ToolAuthorizeParams
         {
@@ -41,7 +41,11 @@ internal sealed class ArcadeToolExecutor(ArcadeClient client) : IArcadeToolExecu
             });
         }
 
-        if (response.Success == false)
+        // Arcade reports Success == true once the execution *request* completes, even when
+        // the tool itself failed upstream (e.g. a disabled Google API). The real tool error
+        // lives in Output.Error, so surface that as a failure rather than letting it fall
+        // through to the "empty" branch and masquerade as "no data".
+        if (response.Success == false || response.Output?.Error is not null)
         {
             return JsonSerializer.SerializeToElement(new
             {
