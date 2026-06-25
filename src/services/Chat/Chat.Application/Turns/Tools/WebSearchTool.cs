@@ -14,7 +14,7 @@ public sealed class WebSearchTool(IWebSearchClient client) : IAgentTool
 
     public string Name => AgentToolNames.WebSearch;
 
-    public Delegate CreateInvocation() => SearchAsync;
+    public Delegate CreateInvocation(TurnToolContext context) => SearchAsync;
 
     [Description("Search the public web for current information. Returns ranked results with snippets to cite.")]
     private async Task<WebSearchResponse> SearchAsync

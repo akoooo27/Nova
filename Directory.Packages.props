@@ -70,6 +70,8 @@
     <PackageVersion Include="PostHog.AspNetCore" Version="2.6.3" />
     
     <PackageVersion Include="Firecrawl" Version="1.1.2" />
+    
+    <PackageVersion Include="ArcadeDotnet" Version="0.1.0" />
     <!-- Api -->
     <PackageVersion Include="Duende.BFF" Version="4.2.0" />
     <PackageVersion Include="Duende.BFF.EntityFramework" Version="4.2.0" />

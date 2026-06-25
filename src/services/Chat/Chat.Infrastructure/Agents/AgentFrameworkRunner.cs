@@ -41,12 +41,19 @@ internal sealed class AgentFrameworkRunner : IAgentRunner
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        TurnToolContext toolContext = new
+        (
+            TurnId: context.TurnId,
+            ChatId: context.ChatId,
+            UserId: context.UserId
+        );
+
         // The tools are ALWAYS exposed. Whether the model is free to
         // decide, or required to call it, is controlled below via ToolMode.
         IList<AITool> tools = _tools
             .Select(tool => (AITool)AIFunctionFactory.Create
             (
-                method: tool.CreateInvocation(),
+                method: tool.CreateInvocation(toolContext),
                 new AIFunctionFactoryOptions { Name = tool.Name }
             ))
             .ToList();

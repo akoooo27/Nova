@@ -1,3 +1,4 @@
+using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebSearch;
 using Chat.Application.Turns.Tools;
 
@@ -5,6 +6,13 @@ namespace Chat.Application.Tests.Turns;
 
 public sealed class WebSearchToolTests
 {
+    private static readonly TurnToolContext ToolContext = new
+    (
+        TurnId: Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        ChatId: Guid.Parse("22222222-2222-2222-2222-222222222222"),
+        UserId: "auth0|user-1"
+    );
+
     [Fact]
     public async Task CreateInvocationReturnsSearchResultFromClient()
     {
@@ -80,7 +88,7 @@ public sealed class WebSearchToolTests
         CancellationToken cancellationToken
     )
     {
-        object? result = tool.CreateInvocation().DynamicInvoke(query, count, cancellationToken);
+        object? result = tool.CreateInvocation(ToolContext).DynamicInvoke(query, count, cancellationToken);
 
         return Assert.IsAssignableFrom<Task<WebSearchResponse>>(result);
     }

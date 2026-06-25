@@ -1,3 +1,4 @@
+using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebRead;
 using Chat.Application.Turns.Tools;
 
@@ -5,6 +6,13 @@ namespace Chat.Application.Tests.Turns;
 
 public sealed class ReadUrlToolTests
 {
+    private static readonly TurnToolContext ToolContext = new
+    (
+        TurnId: Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        ChatId: Guid.Parse("22222222-2222-2222-2222-222222222222"),
+        UserId: "auth0|user-1"
+    );
+
     [Fact]
     public async Task CreateInvocationReturnsReadPageFromReader()
     {
@@ -96,7 +104,7 @@ public sealed class ReadUrlToolTests
         CancellationToken cancellationToken
     )
     {
-        object? result = tool.CreateInvocation().DynamicInvoke(url, cancellationToken);
+        object? result = tool.CreateInvocation(ToolContext).DynamicInvoke(url, cancellationToken);
 
         return Assert.IsAssignableFrom<Task<ReadUrlResponse>>(result);
     }

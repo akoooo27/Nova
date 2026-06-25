@@ -1,7 +1,10 @@
 using Amazon.S3;
 
+using ArcadeDotnet;
+
 using Chat.Application.Abstractions.Analytics;
 using Chat.Application.Abstractions.Database;
+using Chat.Application.Abstractions.Gmail;
 using Chat.Application.Abstractions.ModelCatalog;
 using Chat.Application.Abstractions.ProviderLogos;
 using Chat.Application.Abstractions.Turns;
@@ -16,6 +19,7 @@ using Chat.Application.SharedChats.Queries.GetPublicSharedChat;
 using Chat.Application.SharedChats.Queries.GetSharedChats;
 using Chat.Application.Turns;
 using Chat.Application.Turns.Tools;
+using Chat.Application.Turns.Tools.Gmail;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
@@ -23,11 +27,13 @@ using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.SharedChats;
 using Chat.Infrastructure.Agents;
 using Chat.Infrastructure.Analytics;
+using Chat.Infrastructure.Arcade;
 using Chat.Infrastructure.Chats.Readers;
 using Chat.Infrastructure.Chats.Repositories;
 using Chat.Infrastructure.Database;
 using Chat.Infrastructure.FavoriteModels.Readers;
 using Chat.Infrastructure.FavoriteModels.Repositories;
+using Chat.Infrastructure.Gmail;
 using Chat.Infrastructure.ModelCatalog.Caching;
 using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
@@ -271,6 +277,28 @@ public static class DependencyInjection
             .AddStandardResilienceHandler();
 
         services.AddScoped<IAgentTool, ReadUrlTool>();
+
+        // Gmail tools (Arcade). Delete this block to remove Gmail tool access entirely.
+        services
+            .AddOptions<ArcadeOptions>()
+            .Bind(configuration.GetSection(ArcadeOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton(sp =>
+        {
+            ArcadeOptions options = sp.GetRequiredService<IOptions<ArcadeOptions>>().Value;
+
+            return new ArcadeClient
+            {
+                APIKey = options.ApiKey,
+                BaseUrl = options.BaseUrl
+            };
+        });
+
+        services.AddScoped<IArcadeToolExecutor, ArcadeToolExecutor>();
+        services.AddScoped<IGmailToolClient, ArcadeGmailToolClient>();
+        services.AddScoped<IAgentTool, GmailWhoAmITool>();
 
         // Decorator stack (spec Rule 3): remove this registration and AddAnalytics
         // to delete PostHog without changing the turn pipeline.
