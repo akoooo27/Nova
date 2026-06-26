@@ -21,6 +21,7 @@ public sealed partial class ChatTurnOrchestrator(
     ITokenPublisher publisher,
     IContextBuilder contextBuilder,
     IAgentRunner agentRunner,
+    ITurnStopSignal stopSignal,
     IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider,
     ILogger<ChatTurnOrchestrator> logger
@@ -101,6 +102,19 @@ public sealed partial class ChatTurnOrchestrator(
         {
             await foreach (TurnEvent turnEvent in agentRunner.RunAsync(contextResult.Value, cancellationToken))
             {
+                if (await stopSignal.IsStopRequestedAsync(messageId.Value, cancellationToken))
+                {
+                    await StopTurnAsync
+                    (
+                        thread: thread,
+                        assistantMessage: assistantMessage,
+                        text: text.ToString(),
+                        cancellationToken: cancellationToken
+                    );
+
+                    return;
+                }
+
                 if (turnEvent is TokenEvent token)
                 {
                     text.Append(token.Text);
@@ -188,6 +202,52 @@ public sealed partial class ChatTurnOrchestrator(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(new FailedEvent(assistantMessage.Id.Value, truncated), cancellationToken);
+    }
+
+    private async Task StopTurnAsync
+    (
+        ChatThread thread,
+        ChatMessage assistantMessage,
+        string text,
+        CancellationToken cancellationToken
+    )
+    {
+        MessageContent? content = null;
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            ErrorOr<MessageContent> contentResult = MessageContent.Create(text);
+
+            if (contentResult.IsError)
+            {
+                await FailTurnAsync
+                (
+                    thread: thread,
+                    assistantMessage: assistantMessage,
+                    reason: contentResult.FirstError.Description,
+                    cancellationToken: cancellationToken
+                );
+                return;
+            }
+
+            content = contentResult.Value;
+        }
+
+        ErrorOr<ChatMessage> stopResult = thread.StopAssistantMessage
+        (
+            messageId: assistantMessage.Id,
+            content: content,
+            stoppedAt: dateTimeProvider.UtcNow
+        );
+
+        if (stopResult.IsError)
+        {
+            LogTurnAlreadyTerminal(assistantMessage.Id.Value);
+            return;
+        }
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await publisher.PublishAsync(new StoppedEvent(assistantMessage.Id.Value), cancellationToken);
     }
 
     [LoggerMessage(EventId = 1, Level = LogLevel.Warning,

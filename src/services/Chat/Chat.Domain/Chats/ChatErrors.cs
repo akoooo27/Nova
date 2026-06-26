@@ -144,4 +144,18 @@ public static class ChatErrors
             description:
             $"Active-path assistant message '{messageId.Value}' is still generating; wait for the turn to finish before editing."
         );
+
+    public static Error StopTargetMustBeAssistant(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.StopTargetMustBeAssistant",
+            description: $"Only assistant messages can be stopped; '{messageId.Value}' is not an assistant message."
+        );
+
+    public static Error CannotStopNonGenerating(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotStopNonGenerating",
+            description: $"Message '{messageId.Value}' is not generating and cannot be stopped."
+        );
 }

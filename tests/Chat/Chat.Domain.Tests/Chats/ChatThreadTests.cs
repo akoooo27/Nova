@@ -296,6 +296,86 @@ public sealed class ChatThreadTests
     }
 
     [Fact]
+    public void StopAssistantMessageWhenGeneratingStoresPartialContentAndMarksStopped()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage assistant = BeginAssistant(chat);
+        MessageContent partial = TestChatFactory.CreateContent("Partial answer");
+        DateTimeOffset stoppedAt = TestChatFactory.CreatedAt.AddMinutes(2);
+
+        ErrorOr<ChatMessage> result = chat.StopAssistantMessage(assistant.Id, partial, stoppedAt);
+
+        Assert.False(result.IsError);
+        Assert.Same(assistant, result.Value);
+        Assert.Equal(MessageStatus.Stopped, assistant.Status);
+        Assert.Equal(partial, assistant.Content);
+        Assert.Equal(stoppedAt, assistant.CompletedAt);
+        Assert.Equal(stoppedAt, chat.UpdatedAt);
+    }
+
+    [Fact]
+    public void StopAssistantMessageWhenNoTextGeneratedMarksStoppedWithNullContent()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage assistant = BeginAssistant(chat);
+        DateTimeOffset stoppedAt = TestChatFactory.CreatedAt.AddMinutes(2);
+
+        ErrorOr<ChatMessage> result = chat.StopAssistantMessage(assistant.Id, content: null, stoppedAt: stoppedAt);
+
+        Assert.False(result.IsError);
+        Assert.Equal(MessageStatus.Stopped, assistant.Status);
+        Assert.Null(assistant.Content);
+        Assert.Equal(stoppedAt, assistant.CompletedAt);
+        Assert.Equal(stoppedAt, chat.UpdatedAt);
+    }
+
+    [Fact]
+    public void StopAssistantMessageReturnsStopTargetMustBeAssistantForUserTarget()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+
+        ErrorOr<ChatMessage> result = chat.StopAssistantMessage
+        (
+            messageId: chat.CurrentMessageId,
+            content: null,
+            stoppedAt: TestChatFactory.CreatedAt.AddMinutes(1)
+        );
+
+        AssertError(result, ErrorType.Conflict, "Chat.StopTargetMustBeAssistant");
+    }
+
+    [Fact]
+    public void StopAssistantMessageReturnsCannotStopNonGeneratingWhenTargetAlreadyTerminal()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+        ChatMessage assistant = CompleteAssistant(chat);
+
+        ErrorOr<ChatMessage> result = chat.StopAssistantMessage
+        (
+            messageId: assistant.Id,
+            content: TestChatFactory.CreateContent("Late"),
+            stoppedAt: TestChatFactory.CreatedAt.AddMinutes(3)
+        );
+
+        AssertError(result, ErrorType.Conflict, "Chat.CannotStopNonGenerating");
+    }
+
+    [Fact]
+    public void StopAssistantMessageReturnsMessageNotFoundWhenTargetDoesNotExist()
+    {
+        ChatThread chat = TestChatFactory.CreateThread();
+
+        ErrorOr<ChatMessage> result = chat.StopAssistantMessage
+        (
+            messageId: ChatMessageId.New(),
+            content: null,
+            stoppedAt: TestChatFactory.CreatedAt.AddMinutes(1)
+        );
+
+        AssertError(result, ErrorType.NotFound, "Chat.MessageNotFound");
+    }
+
+    [Fact]
     public void EditUserMessageCreatesUserSiblingWithoutMutatingOriginalAndMovesHead()
     {
         ChatThread chat = TestChatFactory.CreateThread();

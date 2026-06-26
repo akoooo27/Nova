@@ -14,6 +14,7 @@ public sealed class TurnEventSerializerTests
         { new UsageEvent(TurnId, "gpt-4.1", 120, 45), "usage" },
         { new DoneEvent(TurnId), "done" },
         { new FailedEvent(TurnId, "provider timeout"), "failed" },
+        { new StoppedEvent(TurnId), "stopped" },
         { new ReasoningEvent(TurnId, "The model is thinking through the problem."), "reasoning" }
     };
 

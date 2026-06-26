@@ -154,4 +154,18 @@ public sealed class ChatMessage : Entity<ChatMessageId>
 
         return copy;
     }
+
+    internal ErrorOr<Success> Stop(MessageContent? content, DateTimeOffset stoppedAt)
+    {
+        if (Status != MessageStatus.Generating)
+        {
+            return ChatErrors.CannotStopNonGenerating(Id);
+        }
+
+        Content = content;
+        Status = MessageStatus.Stopped;
+        CompletedAt = stoppedAt;
+
+        return Result.Success;
+    }
 }

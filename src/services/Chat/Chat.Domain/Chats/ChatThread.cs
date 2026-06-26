@@ -327,6 +327,37 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         return message;
     }
 
+    public ErrorOr<ChatMessage> StopAssistantMessage
+    (
+        ChatMessageId messageId,
+        MessageContent? content,
+        DateTimeOffset stoppedAt
+    )
+    {
+        ChatMessage? message = FindMessage(messageId);
+
+        if (message is null)
+        {
+            return ChatErrors.MessageNotFound(messageId);
+        }
+
+        if (message.Role != MessageRole.Assistant)
+        {
+            return ChatErrors.StopTargetMustBeAssistant(messageId);
+        }
+
+        ErrorOr<Success> result = message.Stop(content, stoppedAt);
+
+        if (result.IsError)
+        {
+            return result.Errors;
+        }
+
+        UpdatedAt = stoppedAt;
+
+        return message;
+    }
+
     /// <summary>
     /// Creates an edited sibling of an active-path user message under the same parent (a new branch),
     /// leaving the original untouched. Editing a root user message creates another root sibling.

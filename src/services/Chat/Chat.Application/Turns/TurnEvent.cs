@@ -14,6 +14,7 @@ namespace Chat.Application.Turns;
 [JsonDerivedType(typeof(DoneEvent), "done")]
 [JsonDerivedType(typeof(FailedEvent), "failed")]
 [JsonDerivedType(typeof(ReasoningEvent), "reasoning")]
+[JsonDerivedType(typeof(StoppedEvent), "stopped")]
 public abstract record TurnEvent(Guid TurnId);
 
 public sealed record TokenEvent(Guid TurnId, string Text) : TurnEvent(TurnId);
@@ -42,3 +43,5 @@ public sealed record DoneEvent(Guid TurnId) : TurnEvent(TurnId);
 public sealed record FailedEvent(Guid TurnId, string Reason) : TurnEvent(TurnId);
 
 public sealed record ReasoningEvent(Guid TurnId, string Text) : TurnEvent(TurnId);
+
+public sealed record StoppedEvent(Guid TurnId) : TurnEvent(TurnId);

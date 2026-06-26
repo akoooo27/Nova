@@ -53,7 +53,7 @@ internal sealed class RedisTurnStreamReader(IConnectionMultiplexer redis) : ITur
 
                 yield return turnStreamEntry;
 
-                if (turnEvent is DoneEvent or FailedEvent)
+                if (turnEvent is DoneEvent or FailedEvent or StoppedEvent)
                 {
                     yield break;
                 }
