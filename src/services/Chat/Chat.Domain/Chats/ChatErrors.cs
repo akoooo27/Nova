@@ -107,4 +107,55 @@ public static class ChatErrors
             code: "Chat.InvalidBranchPath",
             description: $"The persisted ancestry for message '{messageId.Value}' is invalid."
         );
+
+    public static Error CannotShareTemporaryChat(ChatId chatId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotShareTemporaryChat",
+            description: $"Temporary chat '{chatId.Value}' cannot be shared."
+        );
+
+    public static Error CannotShareGeneratingMessage(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotShareGeneratingMessage",
+            description: $"Generating message '{messageId.Value}' cannot be shared."
+        );
+
+    public static Error InvalidSharePath(ChatMessageId messageId) =>
+        Error.Unexpected
+        (
+            code: "Chat.InvalidSharePath",
+            description: $"The persisted ancestry for shared message '{messageId.Value}' is invalid."
+        );
+
+    public static Error EditTargetNotOnActivePath(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.EditTargetNotOnActivePath",
+            description:
+            $"User message '{messageId.Value}' is not on the active conversation path and cannot be edited."
+        );
+
+    public static Error CannotEditWhileGenerating(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotEditWhileGenerating",
+            description:
+            $"Active-path assistant message '{messageId.Value}' is still generating; wait for the turn to finish before editing."
+        );
+
+    public static Error StopTargetMustBeAssistant(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.StopTargetMustBeAssistant",
+            description: $"Only assistant messages can be stopped; '{messageId.Value}' is not an assistant message."
+        );
+
+    public static Error CannotStopNonGenerating(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotStopNonGenerating",
+            description: $"Message '{messageId.Value}' is not generating and cannot be stopped."
+        );
 }

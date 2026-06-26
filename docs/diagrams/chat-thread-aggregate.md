@@ -114,7 +114,7 @@ flowchart LR
     subgraph adds["Adds a node + moves head"]
         AUM["AddUserMessage<br/>parent must be Assistant"]
         BAM["BeginAssistantMessage<br/>parent must be User"]
-        EUM["EditUserMessage<br/>target must be User;<br/>sibling under target's parent"]
+        EUM["EditUserMessage<br/>target must be an active-path User;<br/>active path must not be Generating;<br/>sibling under target's parent"]
         RA["RegenerateAssistant<br/>target must be Assistant<br/>and Completed/Failed"]
     end
     subgraph mutates["Mutates a node (head unchanged)"]
@@ -130,6 +130,9 @@ flowchart LR
 
 User messages are born `Completed` (`CompletedAt = CreatedAt`) and never transition.
 Assistant messages stream through `Generating`; the two terminal states are one-way.
+Editing is restricted to user nodes on the current root-to-head path. If that path contains a
+`Generating` assistant, editing is rejected until the turn reaches `Completed` or `Failed`.
+Temporary chats use the same edit behavior because they share the same aggregate model.
 
 ```mermaid
 stateDiagram-v2

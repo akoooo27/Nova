@@ -15,6 +15,10 @@ internal sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMe
 
         builder.HasKey(x => x.Id);
 
+        // Composite alternate key so a shared chat's selected-node FK can reference
+        // (chat_id, id), guaranteeing the node belongs to the referenced chat.
+        builder.HasAlternateKey(x => new { x.ChatId, x.Id });
+
         builder.Property(x => x.Id)
             .HasConversion
             (

@@ -147,6 +147,9 @@ namespace Chat.Infrastructure.Database.Migrations
                     b.HasKey("Id")
                         .HasName("pk_chat_messages");
 
+                    b.HasAlternateKey("ChatId", "Id")
+                        .HasName("ak_chat_messages_chat_id_id");
+
                     b.HasIndex("ParentMessageId")
                         .HasDatabaseName("ix_chat_messages_parent_message_id");
 
@@ -309,6 +312,49 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_llm_providers_is_featured_name");
 
                     b.ToTable("llm_providers", (string)null);
+                });
+
+            modelBuilder.Entity("Chat.Domain.SharedChats.SharedChat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CurrentMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_message_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_shared_chats");
+
+                    b.HasIndex("ChatId", "CurrentMessageId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_shared_chats_chat_id_current_message_id");
+
+                    b.HasIndex("UserId", "CreatedAt", "Id")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_shared_chats_user_id_created_at_id");
+
+                    b.ToTable("shared_chats", (string)null);
                 });
 
             modelBuilder.Entity("Chat.Infrastructure.Users.Models.UserReadModel", b =>
@@ -607,6 +653,24 @@ namespace Chat.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_llm_models_llm_providers_provider_id");
+                });
+
+            modelBuilder.Entity("Chat.Domain.SharedChats.SharedChat", b =>
+                {
+                    b.HasOne("Chat.Domain.Chats.ChatThread", null)
+                        .WithMany()
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_shared_chats_chats_chat_id");
+
+                    b.HasOne("Chat.Domain.Chats.Entities.ChatMessage", null)
+                        .WithMany()
+                        .HasForeignKey("ChatId", "CurrentMessageId")
+                        .HasPrincipalKey("ChatId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_shared_chats_chat_messages_chat_id_current_message_id");
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>

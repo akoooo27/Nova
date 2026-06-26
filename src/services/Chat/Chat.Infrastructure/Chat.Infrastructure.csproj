@@ -30,6 +30,8 @@
     <PackageReference Include="PostHog.AspNetCore" />
     
     <PackageReference Include="Firecrawl" />
+    
+    <PackageReference Include="ArcadeDotnet" />
   </ItemGroup>
 
   <ItemGroup>

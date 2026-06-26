@@ -71,6 +71,57 @@ public sealed class ContextBuilderTests
         Assert.Contains(model.Id.Value.ToString(), context.FirstError.Description, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task BuildAsyncIncludesStoppedAssistantContentInHistory()
+    {
+        LlmProvider provider = TestCatalogFactory.CreateProvider();
+        LlmModel model = provider.AddModel
+        (
+            externalModelId: ExternalModelId.FromDatabase("gpt-4.1"),
+            profile: TestCatalogFactory.CreateProfile()
+        ).Value;
+        _providers.AddExistingProvider(provider);
+
+        ChatThread thread = ChatThread.Create
+        (
+            userId: UserId.Create("auth0|user-1").Value,
+            title: ChatTitle.Create("Hello").Value,
+            firstUserMessage: MessageContent.Create("Hello").Value,
+            createdAt: Now
+        );
+
+        ChatMessage stoppedAssistant = thread.BeginAssistantMessage(thread.CurrentMessageId, model.Id, Now).Value;
+        thread.StopAssistantMessage(stoppedAssistant.Id, MessageContent.Create("Partial answer").Value, Now);
+        ChatMessage followUp = thread.AddUserMessage(stoppedAssistant.Id, MessageContent.Create("Continue").Value, Now).Value;
+        ChatMessage nextAssistant = thread.BeginAssistantMessage(followUp.Id, model.Id, Now).Value;
+
+        ContextBuilder builder = new(_providers);
+
+        ErrorOr<TurnContext> result = await builder
+            .BuildAsync(thread, nextAssistant, RetrievedMemories.Empty, TurnGenerationOptions.Default, CancellationToken.None);
+
+        Assert.False(result.IsError);
+        Assert.Collection
+        (
+            result.Value.Messages,
+            message =>
+            {
+                Assert.Equal(TurnRole.User, message.Role);
+                Assert.Equal("Hello", message.Text);
+            },
+            message =>
+            {
+                Assert.Equal(TurnRole.Assistant, message.Role);
+                Assert.Equal("Partial answer", message.Text);
+            },
+            message =>
+            {
+                Assert.Equal(TurnRole.User, message.Role);
+                Assert.Equal("Continue", message.Text);
+            }
+        );
+    }
+
     private (ChatThread Thread, ChatMessage Assistant, LlmModel Model) CreateThreadWithPendingTurn()
     {
         LlmProvider provider = TestCatalogFactory.CreateProvider();

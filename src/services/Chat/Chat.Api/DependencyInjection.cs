@@ -1,3 +1,5 @@
+using Chat.Api.Options;
+using Chat.Api.SharedChats;
 using Chat.Application;
 using Chat.Infrastructure;
 
@@ -13,7 +15,21 @@ internal static class DependencyInjection
         services
             .AddApplication()
             .AddInfrastructure(configuration)
+            .AddSharedLinks(configuration)
             .AddFastEndpointsInternal();
+
+        return services;
+    }
+
+    private static IServiceCollection AddSharedLinks(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<SharedLinksOptions>()
+            .Bind(configuration.GetSection(SharedLinksOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<SharedLinkUrlBuilder>();
 
         return services;
     }

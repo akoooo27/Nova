@@ -7,4 +7,8 @@ internal static class CustomTags
     public const string FavoriteModels = "Favorite Models";
 
     public const string Chats = "Chats";
+
+    public const string SharedChats = "Shared Chats";
+
+    public const string Integrations = "Integrations";
 }

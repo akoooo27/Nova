@@ -327,9 +327,41 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         return message;
     }
 
+    public ErrorOr<ChatMessage> StopAssistantMessage
+    (
+        ChatMessageId messageId,
+        MessageContent? content,
+        DateTimeOffset stoppedAt
+    )
+    {
+        ChatMessage? message = FindMessage(messageId);
+
+        if (message is null)
+        {
+            return ChatErrors.MessageNotFound(messageId);
+        }
+
+        if (message.Role != MessageRole.Assistant)
+        {
+            return ChatErrors.StopTargetMustBeAssistant(messageId);
+        }
+
+        ErrorOr<Success> result = message.Stop(content, stoppedAt);
+
+        if (result.IsError)
+        {
+            return result.Errors;
+        }
+
+        UpdatedAt = stoppedAt;
+
+        return message;
+    }
+
     /// <summary>
-    /// Creates an edited sibling of a user message under the same parent (a new branch),
+    /// Creates an edited sibling of an active-path user message under the same parent (a new branch),
     /// leaving the original untouched. Editing a root user message creates another root sibling.
+    /// Editing is rejected while an assistant on the active path is still generating.
     /// </summary>
     public ErrorOr<ChatMessage> EditUserMessage
     (
@@ -348,6 +380,21 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         if (target.Role != MessageRole.User)
         {
             return ChatErrors.EditTargetMustBeUser(messageId);
+        }
+
+        List<ChatMessage> activePath = GetActivePath();
+
+        if (activePath.All(x => x.Id != messageId))
+        {
+            return ChatErrors.EditTargetNotOnActivePath(messageId);
+        }
+
+        ChatMessage? generatingAssistant = activePath
+            .FirstOrDefault(x => x is { Role: MessageRole.Assistant, Status: MessageStatus.Generating });
+
+        if (generatingAssistant is not null)
+        {
+            return ChatErrors.CannotEditWhileGenerating(generatingAssistant.Id);
         }
 
         ChatMessage sibling = ChatMessage.CreateUserMessage
@@ -428,6 +475,43 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         return Result.Success;
     }
 
+    /// <summary>
+    /// Validates that the selected message and its ancestor path can be shared.
+    /// The selected message may be historical and does not need to be the chat's current head.
+    /// This operation does not modify the chat.
+    /// </summary>
+    public ErrorOr<Success> ValidateShareAt(ChatMessageId messageId)
+    {
+        if (IsTemporary)
+            return ChatErrors.CannotShareTemporaryChat(Id);
+
+        ChatMessage? cursor = FindMessage(messageId);
+
+        if (cursor is null)
+            return ChatErrors.MessageNotFound(messageId);
+
+        if (cursor.Status == MessageStatus.Generating)
+            return ChatErrors.CannotShareGeneratingMessage(messageId);
+
+        HashSet<ChatMessageId> visited = [];
+
+        while (cursor.ParentMessageId is not null)
+        {
+            if (!visited.Add(cursor.Id))
+                return ChatErrors.InvalidSharePath(messageId);
+
+            cursor = FindMessage(cursor.ParentMessageId);
+
+            if (cursor is null)
+                return ChatErrors.InvalidSharePath(messageId);
+        }
+
+        if (!visited.Add(cursor.Id) || cursor.Role != MessageRole.User || cursor.Status != MessageStatus.Completed)
+            return ChatErrors.InvalidSharePath(messageId);
+
+        return Result.Success;
+    }
+
     public void Pin(DateTimeOffset pinnedAt) =>
         PinnedAt ??= pinnedAt;
 
@@ -457,5 +541,26 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         int count = _messages.Count(m => m.ParentMessageId == parentMessageId);
 
         return SiblingIndex.Next(count);
+    }
+
+    private List<ChatMessage> GetActivePath()
+    {
+        List<ChatMessage> activePath = [];
+
+        ChatMessage? cursor = FindMessage(CurrentMessageId);
+
+        while (cursor is not null)
+        {
+            activePath.Add(cursor);
+
+            if (cursor.ParentMessageId is null)
+            {
+                break;
+            }
+
+            cursor = FindMessage(cursor.ParentMessageId);
+        }
+
+        return activePath;
     }
 }

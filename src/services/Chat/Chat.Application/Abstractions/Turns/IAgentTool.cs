@@ -13,5 +13,12 @@ public interface IAgentTool
     /// The delegate the model invokes. Its parameters and [Description] attributes drive the
     /// generated JSON schema. Returns the string the model reads back as the tool result.
     /// </summary>
-    Delegate CreateInvocation();
+    Delegate CreateInvocation(TurnToolContext context);
 }
+
+public sealed record TurnToolContext
+(
+    Guid TurnId,
+    Guid ChatId,
+    string UserId
+);

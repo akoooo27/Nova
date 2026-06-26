@@ -12,7 +12,7 @@ public sealed class ReadUrlTool(IUrlReader reader) : IAgentTool
 
     public string Name => AgentToolNames.ReadUrl;
 
-    public Delegate CreateInvocation() => ReadAsync;
+    public Delegate CreateInvocation(TurnToolContext context) => ReadAsync;
 
     [Description("Fetch the full readable content of a specific web page as markdown. " +
         "Use to read a URL the user gave you, or a result returned by web_search.")]
