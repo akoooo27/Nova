@@ -4,6 +4,7 @@ using ArcadeDotnet;
 
 using Chat.Application.Abstractions.Analytics;
 using Chat.Application.Abstractions.Arcade;
+using Chat.Application.Abstractions.Arcade.Google;
 using Chat.Application.Abstractions.Database;
 using Chat.Application.Abstractions.Gmail;
 using Chat.Application.Abstractions.ModelCatalog;
@@ -85,7 +86,8 @@ public static class DependencyInjection
             .AddTurnStreamReading()
             .AddTurnStopSignal()
             .AddProviderLogoStorage(configuration)
-            .AddArcadeAuth(configuration);
+            .AddArcadeAuth(configuration)
+            .AddGoogleIntegration(configuration);
 
     public static IServiceCollection AddTurnWorkerInfrastructure
     (
@@ -262,6 +264,22 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IArcadeAuthClient, ArcadeAuthClient>();
+
+        return services;
+    }
+
+    // User-managed Google integration (options + client). API host only: the
+    // turn worker shares AddArcadeAuth but never connects integrations, so its
+    // Google-specific config must not gate worker startup.
+    private static IServiceCollection AddGoogleIntegration(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddOptions<GoogleIntegrationOptions>()
+            .Bind(configuration.GetSection(GoogleIntegrationOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddScoped<IGoogleIntegrationClient, GoogleIntegrationClient>();
 
         return services;
     }
