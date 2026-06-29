@@ -8,6 +8,8 @@ using Chat.Domain.Chats.ValueObjects;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Entities;
 using Chat.Domain.ModelCatalog.ValueObjects;
+using Chat.Domain.Personalizations;
+using Chat.Domain.Personalizations.ValueObjects;
 using Chat.Domain.Shared;
 
 using ErrorOr;
@@ -20,13 +22,15 @@ public sealed class ContextBuilderTests
 
     private readonly FakeLlmProviderRepository _providers = new();
 
+    private readonly FakePersonalizationRepository _personalizations = new();
+
     [Fact]
     public async Task BuildAsyncProducesChronologicalHistoryEndingAtTheUserMessage()
     {
         (ChatThread thread, ChatMessage assistant, _) = CreateThreadWithPendingTurn();
         TurnGenerationOptions options = new(ForceUseSearch: true);
 
-        ContextBuilder builder = new(_providers);
+        ContextBuilder builder = new(_providers, _personalizations);
 
         ErrorOr<TurnContext> context = await builder.BuildAsync
         (
@@ -55,7 +59,7 @@ public sealed class ContextBuilderTests
     {
         (ChatThread thread, ChatMessage assistant, LlmModel model) = CreateThreadWithPendingTurn();
 
-        ContextBuilder builder = new(new FakeLlmProviderRepository());
+        ContextBuilder builder = new(new FakeLlmProviderRepository(), new FakePersonalizationRepository());
 
         ErrorOr<TurnContext> context = await builder.BuildAsync
         (
@@ -95,7 +99,7 @@ public sealed class ContextBuilderTests
         ChatMessage followUp = thread.AddUserMessage(stoppedAssistant.Id, MessageContent.Create("Continue").Value, Now).Value;
         ChatMessage nextAssistant = thread.BeginAssistantMessage(followUp.Id, model.Id, Now).Value;
 
-        ContextBuilder builder = new(_providers);
+        ContextBuilder builder = new(_providers, _personalizations);
 
         ErrorOr<TurnContext> result = await builder
             .BuildAsync(thread, nextAssistant, RetrievedMemories.Empty, TurnGenerationOptions.Default, CancellationToken.None);
@@ -120,6 +124,58 @@ public sealed class ContextBuilderTests
                 Assert.Equal("Continue", message.Text);
             }
         );
+    }
+
+    [Fact]
+    public async Task BuildAsyncWhenPersonalizationExistsComposesItIntoSystemPrompt()
+    {
+        (ChatThread thread, ChatMessage assistant, _) = CreateThreadWithPendingTurn();
+
+        Personalization personalization = Personalization.Create(thread.UserId);
+        personalization.UpdateInstructions(CustomInstructions.Create("Always answer in British English.").Value);
+        personalization.UpdateUserProfile(UserProfile.Create
+        (
+            name: UserName.Create("Aki").Value,
+            role: null,
+            about: null
+        ));
+        _personalizations.AddExisting(personalization);
+
+        ContextBuilder builder = new(_providers, _personalizations);
+
+        ErrorOr<TurnContext> context = await builder.BuildAsync
+        (
+            thread: thread,
+            assistantMessage: assistant,
+            memories: RetrievedMemories.Empty,
+            generationOptions: TurnGenerationOptions.Default,
+            cancellationToken: CancellationToken.None
+        );
+
+        Assert.False(context.IsError);
+        Assert.StartsWith("You are Nova, a helpful AI assistant.", context.Value.SystemPrompt, StringComparison.Ordinal);
+        Assert.Contains("Always answer in British English.", context.Value.SystemPrompt, StringComparison.Ordinal);
+        Assert.Contains("Name: Aki", context.Value.SystemPrompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildAsyncWhenNoPersonalizationUsesBaseSystemPrompt()
+    {
+        (ChatThread thread, ChatMessage assistant, _) = CreateThreadWithPendingTurn();
+
+        ContextBuilder builder = new(_providers, _personalizations);
+
+        ErrorOr<TurnContext> context = await builder.BuildAsync
+        (
+            thread: thread,
+            assistantMessage: assistant,
+            memories: RetrievedMemories.Empty,
+            generationOptions: TurnGenerationOptions.Default,
+            cancellationToken: CancellationToken.None
+        );
+
+        Assert.False(context.IsError);
+        Assert.Equal("You are Nova, a helpful AI assistant.", context.Value.SystemPrompt);
     }
 
     private (ChatThread Thread, ChatMessage Assistant, LlmModel Model) CreateThreadWithPendingTurn()
