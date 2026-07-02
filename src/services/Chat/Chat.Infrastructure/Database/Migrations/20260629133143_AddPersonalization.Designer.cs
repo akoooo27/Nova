@@ -4,18 +4,20 @@ using System.Collections.Generic;
 using Chat.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 
 #nullable disable
 
 namespace Chat.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ChatDbContext))]
-    partial class ChatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260629133143_AddPersonalization")]
+    partial class AddPersonalization
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -136,12 +138,6 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("role");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasColumnName("search_vector")
-                        .HasComputedColumnSql("to_tsvector('simple', coalesce(content, ''))", true);
-
                     b.Property<int>("SiblingIndex")
                         .HasColumnType("integer")
                         .HasColumnName("sibling_index");
@@ -159,11 +155,6 @@ namespace Chat.Infrastructure.Database.Migrations
 
                     b.HasIndex("ParentMessageId")
                         .HasDatabaseName("ix_chat_messages_parent_message_id");
-
-                    b.HasIndex("SearchVector")
-                        .HasDatabaseName("ix_chat_messages_search_vector");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_chat_messages_status");

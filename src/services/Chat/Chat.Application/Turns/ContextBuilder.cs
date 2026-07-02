@@ -5,12 +5,14 @@ using Chat.Domain.Chats.Entities;
 using Chat.Domain.Chats.ValueObjects;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Entities;
+using Chat.Domain.Personalizations;
 
 using ErrorOr;
 
 namespace Chat.Application.Turns;
 
-public sealed class ContextBuilder(ILlmProviderRepository providers) : IContextBuilder
+public sealed class ContextBuilder(ILlmProviderRepository providers, IPersonalizationRepository personalizations)
+    : IContextBuilder
 {
     private const string DefaultSystemPrompt = "You are Nova, a helpful AI assistant.";
 
@@ -68,13 +70,17 @@ public sealed class ContextBuilder(ILlmProviderRepository providers) : IContextB
 
         history.Reverse();
 
+        Personalization? personalization = await personalizations.GetByUserIdAsync(thread.UserId, cancellationToken);
+
+        string systemPrompt = PersonalizationSystemPrompt.Compose(DefaultSystemPrompt, personalization);
+
         return new TurnContext
         (
             TurnId: assistantMessage.Id.Value,
             ChatId: thread.Id.Value,
             UserId: thread.UserId.Value,
             ExternalModelId: model.ExternalModelId.Value,
-            SystemPrompt: DefaultSystemPrompt,
+            SystemPrompt: systemPrompt,
             GenerationOptions: generationOptions,
             Messages: history
         );

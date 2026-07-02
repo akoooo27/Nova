@@ -2,6 +2,7 @@ using Chat.Application.Abstractions.Database;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
+using Chat.Domain.Personalizations;
 using Chat.Domain.SharedChats;
 using Chat.Infrastructure.Users.Models;
 
@@ -29,6 +30,8 @@ public sealed class ChatDbContext(
     public DbSet<ChatThread> ChatThreads => Set<ChatThread>();
 
     public DbSet<SharedChat> SharedChats => Set<SharedChat>();
+
+    public DbSet<Personalization> Personalizations => Set<Personalization>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
