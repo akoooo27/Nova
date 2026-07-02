@@ -7,15 +7,15 @@ using Mediator;
 
 namespace Shared.Application.Behaviors;
 
-public class ValidationBehavior<TRequest, TResponse>(IValidator<TRequest>? validator = null)
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+public class ValidationBehavior<TMessage, TResponse>(IValidator<TMessage>? validator = null)
+    : IPipelineBehavior<TMessage, TResponse>
+    where TMessage : IMessage
     where TResponse : IErrorOr
 {
     public async ValueTask<TResponse> Handle
     (
-        TRequest message,
-        MessageHandlerDelegate<TRequest, TResponse> next,
+        TMessage message,
+        MessageHandlerDelegate<TMessage, TResponse> next,
         CancellationToken cancellationToken
     )
     {

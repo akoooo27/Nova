@@ -1,8 +1,10 @@
 # Chat Search - Design Spec
 
-**Goal:** Add authenticated chat-history search to the backend. Search returns chat-level results ranked by title and message-content relevance, with bounded message snippets explaining why each chat matched. Indexing is asynchronous, durable, and debounced so active LLM conversations do not cause excessive Elasticsearch writes.
+**Goal:** Add authenticated chat-history search to the backend. Search returns chat-level results ranked by title and message-content relevance, with bounded message snippets explaining why each chat matched. Search runs directly against PostgreSQL full-text search, so results are transactionally fresh and no indexing pipeline is required.
 
-**Builds on:** Existing Chat.Api/FastEndpoints request style, `Mediator` query/command handlers, Dapper query readers, MassTransit with EF outbox, RabbitMQ, PostgreSQL, Aspire AppHost resources, and the current chat aggregate/message persistence model.
+**Builds on:** Existing Chat.Api/FastEndpoints request style, `Mediator` query/command handlers, Dapper query readers, PostgreSQL, and the current chat aggregate/message persistence model.
+
+> **Revision note (2026-07-02):** This spec replaces the earlier Elasticsearch-based design. The previous design required a second data store and, as a consequence, an outbox message contract, a consumer, a debounce job table, a polling claim loop, whole-chat snapshot reindexing, a manual backfill path, and a read-time PostgreSQL validation layer — plus 60 seconds of accepted staleness. All of that machinery existed only to synchronize Elasticsearch with PostgreSQL. Searching PostgreSQL directly removes the second store and everything downstream of it, while meeting every v1 product requirement. The read-side abstraction (`IChatSearchReader`) is the seam for swapping in an external engine later if search ever outgrows PostgreSQL.
 
 ---
 
@@ -13,23 +15,21 @@
 - `GET /me/chats/search` for authenticated chat search.
 - Query text plus archive-state filtering.
 - Chat-level search results with `matchCount` and up to 3 plain snippets from the best matching messages.
-- Elasticsearch as the search engine.
-- Dedicated `Chat.SearchWorker` service.
-- Durable `ChatSearchIndexRequested` messages published through MassTransit + EF outbox.
-- PostgreSQL debounce state keyed by chat id.
-- Whole-chat snapshot reindexing after about 60 seconds of quiet time.
-- Manual backfill path for existing non-temporary chats.
-- PostgreSQL validation/enrichment of search hits before returning them.
+- PostgreSQL full-text search (`tsvector`/`tsquery`, GIN index) as the search engine.
+- A database-generated `search_vector` column on `chat_messages`, invisible to the domain model and EF Core.
+- Exact result totals and correct offset pagination.
+- Immediate searchability: a committed message is searchable on the next request.
 
 **Out of scope**
 
 - Searching temporary chats.
 - Public/shared-chat search.
-- PostgreSQL fallback search when Elasticsearch is unavailable.
 - Date/model/role/pinned filters.
-- Returning all matched message ids.
-- Highlight range/tag metadata in the v1 response.
-- Incremental per-message indexing optimization.
+- Highlight range/tag metadata in the v1 response (snippets are plain text).
+- Semantic/vector search.
+- Searching `Stopped` (partially generated) assistant messages. Only `Completed` messages are searchable in v1; widening the status filter later is a one-line query change.
+- Restricting search to the active conversation branch. All message-tree branches are searched in v1 (the previous design had the same behavior).
+- Elasticsearch, search workers, indexing queues, and backfill tooling.
 
 ---
 
@@ -37,188 +37,115 @@
 
 Search is a separate operation from normal chat listing. If the user opens the search UI but has not typed a query, the frontend should not call the backend search endpoint. A blank or whitespace-only query sent to the backend returns `400 Bad Request`.
 
-Search results are chat-level. A chat appears at most once in the response even when multiple messages match. The response includes a match count and up to 3 snippets so the user can tell why the chat matched.
+Search results are chat-level. A chat appears at most once in the response even when multiple messages match. The response includes a match count and up to 3 snippets so the user can tell why the chat matched. A chat whose title matches but whose messages do not is still returned (with zero message matches and no snippets).
 
-Archived chats are controlled by the request. Searching the normal chat view uses `isArchived=false`; searching the archive view uses `isArchived=true`. Temporary chats are never indexed and never returned.
+Archived chats are controlled by the request. Searching the normal chat view uses `isArchived=false`; searching the archive view uses `isArchived=true`. Temporary chats are never returned.
 
-Search freshness is intentionally eventual. New or changed chats should usually become searchable about 60 seconds after the last persisted chat activity. This trades small staleness for significantly fewer indexing operations during active conversations.
+Search freshness is immediate. The search index is a generated column maintained by PostgreSQL in the same transaction as the message write, so a chat is searchable the moment its write commits. There is no debounce window and no eventual-consistency caveat.
 
 ---
 
 ## 3. Architecture
 
-Use durable debounced snapshot indexing:
+Single-store, synchronous read path:
 
-1. Chat mutations persist through existing command/turn flows.
-2. Relevant mutations publish `ChatSearchIndexRequested` through `IMessageBus`.
-3. MassTransit EF outbox keeps the indexing request transactionally tied to the chat database write.
-4. `Chat.SearchWorker` consumes the message and upserts a debounce row in PostgreSQL.
-5. A background processor claims due debounce rows and reindexes the whole chat snapshot into Elasticsearch.
-6. Search queries Elasticsearch for ranked candidates.
-7. The API validates and enriches candidate chats from PostgreSQL before responding.
+1. Chat mutations persist through existing command/turn flows — **no changes to any write path**.
+2. PostgreSQL maintains `chat_messages.search_vector` automatically as a stored generated column.
+3. `GET /me/chats/search` binds to `SearchChatsQuery`, handled by a `Mediator` query handler.
+4. The handler resolves the authenticated `UserId` and calls `IChatSearchReader`.
+5. The Dapper-based reader executes one round trip (count statement + page statement) against PostgreSQL and returns read models.
 
-This keeps request handlers free of Elasticsearch writes, avoids dual-write problems, and gives the search worker independent failure/retry behavior.
+There is no message contract, no consumer, no worker, no job table, and no backfill: existing rows become searchable as soon as the migration creating the column and index is applied.
 
----
+### Domain isolation (hard constraint)
 
-## 4. Search Engine
+The domain model must not know about search. `search_vector`:
 
-Use Elasticsearch for v1.
+- is **not** a property on `ChatMessage`,
+- is **not** mapped in `ChatDbContext` or any `IEntityTypeConfiguration`,
+- is created by raw SQL in a hand-written EF migration (repo precedent: `20260614161000_ChatPinArchive.cs`).
 
-Before implementation, verify the current Aspire and .NET package support for Elasticsearch. Prefer first-class Aspire hosting/client packages if they are available for the project’s Aspire version. If not, add Elasticsearch to AppHost as an explicit container resource and pass configuration to Chat.Api and Chat.SearchWorker.
-
-The application should hide Elasticsearch client details behind application/infrastructure abstractions so query handlers and indexing services do not depend directly on client-specific types.
+Because the column is absent from the EF model and snapshot, EF migrations will never generate operations against it, and EF never reads or writes it. The only code aware of the column is the Dapper reader.
 
 ---
 
-## 5. Index Model
+## 4. Search Index
 
-Use message-level Elasticsearch documents grouped into chat-level API results.
+One stored generated column plus one GIN index on `chat_messages`:
 
-Each searchable document represents one completed user or assistant message:
+```sql
+alter table chat_messages
+    add column search_vector tsvector
+    generated always as (to_tsvector('simple', coalesce(content, ''))) stored;
+
+create index ix_chat_messages_search_vector on chat_messages using gin (search_vector);
+```
+
+Decisions:
+
+- **`simple` text search configuration.** Chat content is multilingual and full of code identifiers; language stemming (`english`) would produce surprising matches and misses. `simple` lowercases and tokenizes without stemming, which is predictable. The same configuration **must** be used everywhere a `tsvector`/`tsquery` is built (column expression, title match, `ts_headline`), otherwise queries stop matching the indexed expression.
+- **Stored generated column** rather than an expression index, so ranking (`ts_rank`) and matching read the precomputed vector instead of re-parsing up to 32 KB of content per row.
+- **`chats.title` is matched at query time** with `to_tsvector('simple', title)` and no index. Titles are short and per-user chat counts are small; a stored vector for titles is not warranted. An expression index can be added later without any code change.
+- `content` is `varchar(32768)`, well under `tsvector` limits; `coalesce` handles messages with `NULL` content (they produce an empty vector and never match).
+
+Searchable rows are constrained at query time, not index time:
+
+- `chats.user_id = @UserId` — authorization is part of the query itself.
+- `chats.is_temporary = false`.
+- `chats.is_archived = @IsArchived`.
+- `chat_messages.status = 'Completed'` — excludes `Generating`, `Failed`, and `Stopped` messages.
+
+---
+
+## 5. Query And Ranking
+
+Parse user input with `websearch_to_tsquery('simple', @Query)`. It never throws on malformed input and supports quoted phrases, `or`, and `-exclusion` for free. Input that yields an empty `tsquery` (e.g. only punctuation) simply matches nothing.
+
+Chat-level score:
 
 ```text
-id: "{chatId}:{messageId}"
-chatId
-messageId
-userId
-chatTitle
-role
-content
-messageCreatedAt
-chatUpdatedAt
-isArchived
+score = 2.0 * ts_rank(title_vector, query)          -- 0 when the title does not match
+      + best_message_rank                            -- max ts_rank over the chat's matching messages
+      + 0.05 * least(match_count, 20)                -- several strong content matches can outrank a weak title match
 ```
 
-Document rules:
+Ordering: `score desc, updated_at desc, id desc`. The formula is a starting point and is confined to one SQL expression; tuning it later touches nothing else.
 
-- Include completed user messages.
-- Include completed assistant messages.
-- Exclude generating assistant messages.
-- Exclude failed assistant messages as searchable content.
-- Exclude temporary chats entirely.
-- Do not create public/shared search documents.
+Results are grouped per chat in SQL (`group by chat_id` for stats, `left join lateral ... limit 3` for snippets), so pagination and totals operate on chats, not messages. `total` is an exact count of matching chats and `limit`/`offset` paginate deterministically.
 
-`chatTitle` is duplicated onto message documents. Whole-chat snapshot reindexing keeps duplicated metadata simple: when title/archive/content changes, delete the chat’s existing documents and write the current snapshot.
+Snippets: up to 3 per chat, best-ranked messages first, generated with:
 
-Ranking rules:
-
-- Search `chatTitle` and `content`.
-- Give title matches a moderate boost.
-- Allow modest fuzziness for title matching.
-- Keep message-content matching tokenized and predictable; do not enable broad fuzziness for content in v1.
-- Group/collapse results by `chatId`.
-- Rank chats by a combination of best document score and match count, so multiple strong content matches can outrank a weak title-only match.
-
----
-
-## 6. Indexing Triggers
-
-Publish `ChatSearchIndexRequested` for chat mutations that can affect search results or search eligibility:
-
-- Chat created.
-- User message added.
-- Assistant message completed.
-- Chat renamed.
-- Chat archived or unarchived.
-- Branch/edit/regenerate flows when they add or complete searchable messages.
-- Chat deletion or cleanup paths, when applicable, so indexed content can be removed or skipped on reindex.
-
-Pin/unpin does not need to affect the search index unless search results later become pinned-first. In v1, search ranks by relevance, so pin state is loaded from PostgreSQL during response enrichment rather than used for Elasticsearch ranking.
-
-The event should carry enough routing metadata for the search worker to update debounce state without loading the aggregate:
-
-```csharp
-public sealed record ChatSearchIndexRequested(
-    Guid ChatId,
-    Guid UserId,
-    string Reason,
-    DateTimeOffset OccurredAt);
+```sql
+ts_headline('simple', content, query, 'MaxFragments=1, MaxWords=18, MinWords=6, StartSel="", StopSel=""')
 ```
 
-The exact contract can live in the Chat application/infrastructure boundary unless another service needs to publish or consume it. Use the existing `Mediator` package for in-process handlers and MassTransit for durable cross-process delivery; do not introduce MediatR.
+Empty `StartSel`/`StopSel` produce plain bounded text with no markup. The response shape can add highlight metadata later without breaking.
 
 ---
 
-## 7. Debounce State
+## 6. Search API
 
-Store debounce state in the Chat PostgreSQL database.
-
-Proposed table:
-
-```text
-chat_search_index_jobs
-  chat_id uuid primary key
-  user_id uuid not null
-  index_after timestamptz not null
-  last_requested_at timestamptz not null
-  status text not null
-  attempt_count integer not null
-  last_error text null
-  locked_until timestamptz null
-  created_at timestamptz not null
-  updated_at timestamptz not null
-```
-
-Status values:
-
-- `pending`
-- `processing`
-- `failed`
-
-On `ChatSearchIndexRequested`, the consumer upserts by `chat_id`:
-
-- `index_after = max(existing.index_after, occurred_at + debounceDelay)`
-- `last_requested_at = max(existing.last_requested_at, occurred_at)`
-- `status = pending`
-- preserve useful failure metadata only if it still helps diagnostics
-
-The debounce delay should default to about 60 seconds and be configurable.
-
-The due-job processor claims rows with PostgreSQL row locking, for example `FOR UPDATE SKIP LOCKED`, so multiple worker instances can run safely. If indexing succeeds, mark the row complete by deleting it or setting it to a completed state. Prefer deleting completed rows unless operational history is needed.
-
-If Elasticsearch is unavailable or indexing fails, keep the row pending/failed for retry with backoff and record `last_error`.
-
----
-
-## 8. Reindex Algorithm
-
-When a debounce row is due:
-
-1. Load the authoritative chat snapshot from PostgreSQL for `chat_id` and `user_id`.
-2. Delete all Elasticsearch documents for that `chatId`.
-3. If the chat no longer exists, is temporary, or otherwise should not be searchable, stop after deletion.
-4. Build documents for completed user and assistant messages.
-5. Bulk index the documents.
-6. Mark the job complete.
-
-Whole-chat replacement is intentionally chosen for v1. It is idempotent, repairs stale duplicated metadata, and simplifies deletes, archive changes, title changes, branching, editing, and regeneration. Incremental indexing can be added later if measured indexing cost requires it.
-
----
-
-## 9. Search API
-
-### 9.1 Endpoint
+### 6.1 Endpoint
 
 ```http
 GET /me/chats/search?query=memory%20bug&isArchived=false&limit=20&offset=0
 ```
 
-Use FastEndpoints and the existing query-handler style:
+Follows the existing `GetChats` endpoint conventions:
 
-- Endpoint request model under `Chat.Api/Endpoints/Chats/SearchChats`.
-- `SearchChatsQuery : IQuery<ErrorOr<ChatSearchReadModel>>`.
-- Validator for query, limit, and offset.
-- Handler resolves authenticated `UserId`, calls a search reader/service, and returns read models.
+- FastEndpoints `Request` record bound from query parameters, defined in `Endpoint.cs`.
+- `SearchChatsQuery : IQuery<ErrorOr<ChatSearchReadModel>>` dispatched through `Mediator`.
+- FluentValidation validator runs in the existing `ValidationBehavior` pipeline.
+- Handler resolves the authenticated `UserId`, trims the query text, and calls `IChatSearchReader`.
 
 Validation:
 
-- `query` is required and must contain non-whitespace text.
-- `limit` defaults to `ChatLimits.DefaultQueryLimit` and uses the same maximum as `GetChatsQueryValidator`.
+- `query` is required, must contain non-whitespace text, and is capped at `ChatLimits.MaxSearchQueryLength` (256).
+- `limit` defaults to `ChatLimits.DefaultQueryLimit` and is bounded by `ChatLimits.MinQueryLimit`/`ChatLimits.MaxQueryLimit`, same as `GetChatsQueryValidator`.
 - `offset` defaults to `0` and must be non-negative.
-- `isArchived` is required or defaults to `false`, matching existing endpoint conventions.
+- `isArchived` defaults to `false`, matching existing endpoint conventions.
 
-### 9.2 Response
+### 6.2 Response
 
 ```json
 {
@@ -235,7 +162,7 @@ Validation:
       "snippets": [
         {
           "messageId": "018f7e9e-5f95-7b51-a9af-6d0dd0f37de0",
-          "role": "assistant",
+          "role": "Assistant",
           "text": "bounded plain snippet..."
         }
       ]
@@ -247,100 +174,39 @@ Validation:
 }
 ```
 
-Return up to 3 snippets per chat. Snippets are plain bounded text in v1. The response can later add highlight metadata without changing the basic result shape.
+`total` is exact. `role` uses the stored enum names (`User`/`Assistant`). A title-only match has `matchCount: 0` and `snippets: []`.
 
 ---
 
-## 10. Consistency And Authorization
+## 7. Consistency And Authorization
 
-PostgreSQL is the authority. Elasticsearch provides candidate ranking and snippets only.
-
-Search flow:
-
-1. Query Elasticsearch for candidate chat groups owned by the authenticated `userId`.
-2. Request more candidates than the requested page size because PostgreSQL validation may discard stale hits.
-3. Load candidate chats from PostgreSQL for the authenticated user.
-4. Filter by `isArchived` and `isTemporary = false`.
-5. Drop missing/deleted/wrong-state candidates.
-6. Preserve Elasticsearch relevance order for the validated results.
-7. Return enriched metadata from PostgreSQL plus snippets/match counts from Elasticsearch.
-
-This prevents stale index metadata from authorizing or exposing chats. Archive state is also checked in PostgreSQL, so a debounced archive change cannot remain visible indefinitely through stale index data.
-
-If Elasticsearch is unavailable, return a service-unavailable style error from the search endpoint. Do not fall back to PostgreSQL title/content search in v1.
+There is one store. The search query filters by `user_id`, `is_temporary`, `is_archived`, and message `status` inside the same statement that ranks and paginates, against committed data. There is no stale-index window, no cross-store validation step, no over-fetch multiplier, and no way for a rename, archive toggle, or delete to leave search out of sync.
 
 ---
 
-## 11. Backfill
+## 8. Error Handling
 
-Provide a manual backfill path that queues all existing non-temporary chats for indexing.
-
-The backfill should:
-
-- Be explicitly triggered, not automatic at production startup.
-- Page through non-temporary chats from PostgreSQL.
-- Upsert debounce rows or publish `ChatSearchIndexRequested` messages.
-- Support throttling/batching.
-- Be safe to rerun.
-
-This gives the release a path to make historical chats searchable and gives operators a repair path after index mapping changes.
+- Blank/oversized query, bad limit/offset: `400` via the standard validation pipeline.
+- Unauthenticated: `401` via existing auth conventions.
+- Database failure: the standard application error path — search has no special availability story separate from the rest of the API, because it has no extra infrastructure to become unavailable.
+- No matches: `200` with `items: []` and `total: 0`.
 
 ---
 
-## 12. Aspire And Deployment
+## 9. Testing Strategy
 
-Add a dedicated `Chat.SearchWorker` project and register it in `Nova.AppHost`.
+Tests are approved for this feature.
 
-Expected resources:
-
-- Chat DB connection.
-- RabbitMQ connection.
-- Elasticsearch endpoint/configuration.
-
-`Chat.Api` needs Elasticsearch configuration for querying. `Chat.SearchWorker` needs Elasticsearch configuration for indexing. If a first-class Aspire Elasticsearch integration exists for the current package set, use it. Otherwise, define an Elasticsearch container resource explicitly and wire endpoint environment variables/configuration in AppHost.
-
-Keep MassTransit version unchanged. The current pin is intentional.
+- Validator: blank/whitespace query, over-length query, limit/offset bounds.
+- Handler: passes trimmed query and authenticated user id to the reader; returns reader result; returns error and skips the reader when the user id is missing.
+- Reader SQL is exercised by build verification and the manual checks in the plan's final task (the repo has no infrastructure test project).
 
 ---
 
-## 13. Error Handling And Retries
+## 10. Future Evolution
 
-Indexing failures:
-
-- Record failure details on the debounce row.
-- Retry with backoff.
-- Do not block chat writes.
-- Do not publish partial user-visible success claims from the indexer.
-
-Search failures:
-
-- If Elasticsearch is unavailable, return service unavailable.
-- If PostgreSQL validation fails unexpectedly, return the normal application error path.
-- Empty successful matches return an empty result set, not an error.
-
-Index replacement should be designed to avoid permanent duplicate/stale documents. Prefer deterministic document ids and delete-by-chat before bulk indexing.
-
----
-
-## 14. Testing Strategy
-
-Ask before adding or expanding tests, per project instruction.
-
-When implementation is approved, the risk areas that should be covered are:
-
-- Query validation: blank query, limit/offset bounds.
-- Search handler authorization/validation against PostgreSQL.
-- Debounce upsert behavior.
-- Reindex snapshot rules: temporary chats skipped, generating/failed assistant messages skipped, completed user/assistant messages indexed.
-- Archive filtering.
-- Backfill batching/idempotence.
-
----
-
-## 15. Open Implementation Checks
-
-- Verify current Elasticsearch package choices for .NET 10/Aspire 13.x before editing project files.
-- Confirm whether to use a first-class Aspire Elasticsearch integration or an explicit container resource.
-- Decide the exact Elasticsearch client package and mapping syntax after verification.
-- Decide whether completed debounce rows are deleted or retained briefly for observability.
-- Decide the exact service-unavailable error representation using the project’s existing `ErrorOr`/problem-details conventions.
+- **External search engine:** `IChatSearchReader` is the seam. If search outgrows PostgreSQL (cross-user scale, semantic search, heavy relevance tuning), implement the same interface against Elasticsearch/pgvector and build the indexing pipeline then, justified by measured need. The API contract does not change.
+- **Fuzzier title matching:** add `pg_trgm` similarity on `chats.title` as an additional score term.
+- **Stopped messages:** include partially generated content by widening the status filter.
+- **Active-branch-only search:** restrict message matching to the active conversation path if searching abandoned branches proves confusing.
+- **Highlight metadata:** switch `ts_headline` delimiters to sentinel markers and emit ranges alongside `text`.
