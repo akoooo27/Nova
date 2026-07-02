@@ -15,6 +15,7 @@ using Chat.Application.Abstractions.WebSearch;
 using Chat.Application.Chats.Cleanup;
 using Chat.Application.Chats.Queries.GetChat;
 using Chat.Application.Chats.Queries.GetChats;
+using Chat.Application.Chats.Queries.SearchChats;
 using Chat.Application.FavoriteModels.Queries.GetFavoriteModels;
 using Chat.Application.ModelCatalog.LlmProviders.Queries.GetManagedModelCatalog;
 using Chat.Application.SharedChats.Queries.GetPublicSharedChat;
@@ -175,6 +176,7 @@ public static class DependencyInjection
 
         services.AddScoped<IChatListReader, ChatListReader>();
         services.AddScoped<IChatDetailReader, ChatDetailReader>();
+        services.AddScoped<IChatSearchReader, ChatSearchReader>();
 
         services.AddScoped<ISharedChatListReader, SharedChatListReader>();
         services.AddScoped<IPublicSharedChatReader, PublicSharedChatReader>();

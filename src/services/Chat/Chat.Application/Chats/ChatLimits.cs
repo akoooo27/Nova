@@ -9,4 +9,6 @@ public static class ChatLimits
     public const int MinQueryLimit = 1;
 
     public const int MaxQueryLimit = 100;
+
+    public const int MaxSearchQueryLength = 256;
 }

@@ -5,6 +5,8 @@ using Chat.Domain.ModelCatalog.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+using NpgsqlTypes;
+
 namespace Chat.Infrastructure.Chats.Configurations;
 
 internal sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMessage>
@@ -83,6 +85,9 @@ internal sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMe
                 value => SiblingIndex.FromDatabase(value)
             );
 
+        builder.Property<NpgsqlTsVector>("SearchVector")
+            .HasComputedColumnSql("to_tsvector('simple', coalesce(content, ''))", stored: true);
+
         builder.HasOne<ChatMessage>()
             .WithMany()
             .HasForeignKey(x => x.ParentMessageId)
@@ -93,5 +98,6 @@ internal sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMe
             .AreNullsDistinct(false);
 
         builder.HasIndex(x => x.Status);
+        builder.HasIndex("SearchVector").HasMethod("GIN");
     }
 }
