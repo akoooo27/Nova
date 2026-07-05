@@ -7,15 +7,14 @@ namespace Chat.Domain.Tests.Chats;
 
 public sealed class ChatThreadProjectTests
 {
-    private static ChatThread CreateThread(bool isTemporary = false, ProjectId? projectId = null) =>
+    private static ChatThread CreateThread(bool isTemporary = false) =>
         ChatThread.Create
         (
             userId: TestChatFactory.CreateUserId(),
             title: TestChatFactory.CreateTitle(),
             firstUserMessage: TestChatFactory.CreateContent("Hello"),
             createdAt: TestChatFactory.CreatedAt,
-            isTemporary: isTemporary,
-            projectId: projectId
+            isTemporary: isTemporary
         );
 
     [Fact]
@@ -24,16 +23,6 @@ public sealed class ChatThreadProjectTests
         ChatThread chat = CreateThread();
 
         Assert.Null(chat.ProjectId);
-    }
-
-    [Fact]
-    public void CreateAssignsProjectIdWhenProvided()
-    {
-        ProjectId projectId = ProjectId.New();
-
-        ChatThread chat = CreateThread(projectId: projectId);
-
-        Assert.Equal(projectId, chat.ProjectId);
     }
 
     [Fact]
@@ -66,8 +55,8 @@ public sealed class ChatThreadProjectTests
     [Fact]
     public void RemoveFromProjectClearsProjectIdAndBumpsUpdatedAt()
     {
-        ProjectId projectId = ProjectId.New();
-        ChatThread chat = CreateThread(projectId: projectId);
+        ChatThread chat = CreateThread();
+        chat.MoveToProject(ProjectId.New(), TestChatFactory.CreatedAt.AddMinutes(2));
         DateTimeOffset later = TestChatFactory.CreatedAt.AddMinutes(5);
 
         chat.RemoveFromProject(later);

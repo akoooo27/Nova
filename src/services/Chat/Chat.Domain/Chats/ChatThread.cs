@@ -51,8 +51,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         ChatMessage root,
         DateTimeOffset createdAt,
         DateTimeOffset updatedAt,
-        bool isTemporary,
-        ProjectId? projectId = null
+        bool isTemporary
     ) : base(id)
     {
         UserId = userId;
@@ -61,7 +60,6 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         IsTemporary = isTemporary;
-        ProjectId = projectId;
         _messages = [root];
     }
 
@@ -71,8 +69,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         ChatTitle title,
         MessageContent firstUserMessage,
         DateTimeOffset createdAt,
-        bool isTemporary = false,
-        ProjectId? projectId = null
+        bool isTemporary = false
     )
     {
         ChatId id = ChatId.New();
@@ -94,8 +91,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             root: root,
             createdAt: createdAt,
             updatedAt: createdAt,
-            isTemporary: isTemporary,
-            projectId: projectId
+            isTemporary: isTemporary
         );
     }
 

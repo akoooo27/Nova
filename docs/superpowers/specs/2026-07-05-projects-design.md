@@ -109,12 +109,14 @@ void Remove(Project project);
 The entire grouping model is one nullable reference plus one mutator on `ChatThread`:
 
 - New property: `public ProjectId? ProjectId { get; private set; }`
-- `ChatThread.Create(...)` gains an optional `ProjectId? projectId = null`, stored on construction.
+- `ChatThread.Create(...)` takes **no** `projectId` — a chat is always born standalone. The only way
+  into a project is `MoveToProject`, so "chat in a project" cannot be constructed in an invalid state.
 - New mutator: `ErrorOr<Success> MoveToProject(ProjectId? projectId, DateTimeOffset updatedAt)` —
   sets `ProjectId` (`null` = move out) and updates `UpdatedAt`.
-  - **Invariant:** a **temporary** chat cannot belong to a project. `MoveToProject` returns a
-    validation error when `IsTemporary`, and `Create` rejects `projectId != null && isTemporary`
-    (surfaced as a new `ChatErrors` entry). Temporary chats are ephemeral and stand alone.
+  - **Invariant:** a **temporary** chat cannot belong to a project. Enforced in **one place**:
+    `MoveToProject` returns `ChatErrors.CannotAddTemporaryChatToProject` when `IsTemporary`. Because
+    `Create` cannot set a project at all, there is no second enforcement point to keep in sync.
+    Temporary chats are ephemeral and stand alone.
 - `BranchFrom` keeps the source's `ProjectId` on the branch (a branch of a project chat stays in the
   same project). All other message-tree methods are untouched — grouping rides along on the loaded
   aggregate for free.
@@ -189,16 +191,36 @@ following the existing command → handler → `ErrorOr` result pattern.
 | `DELETE /projects/{id}`               | `DeleteProjectCommand`     | **cascade** deletes the project's chats          |
 | `GET /projects`                       | `ListProjectsQuery`        | the user's projects (list metadata)              |
 | `GET /projects/{id}`                  | `GetProjectQuery`          | project detail **+ its chats**                   |
-| `PATCH /chats/{id}/project`           | `MoveChatToProjectCommand` | body carries target `projectId` or `null`        |
+| `PATCH /chats/{id}/project`           | `SetChatProjectCommand`    | body carries target `projectId` or `null`        |
+
+**Set-chat-project endpoint (in *and* out through one handler).** This is a dedicated endpoint, kept
+separate from `UpdateChat` because the association carries validation the cosmetic mutators don't
+(target-project ownership, the temporary-chat invariant). The request body carries a nullable
+`projectId`, and `SetChatProjectHandler` branches on it:
+
+- `projectId` **null** → move the chat *out* of any project via `chat.RemoveFromProject(now)` (cannot
+  fail). An omitted field deserializes to null and is treated the same — this endpoint's only job is
+  to set the association.
+- `projectId` **present** → verify the project exists **and belongs to the caller**
+  (`projects.GetByIdAsync(projectId, userId)` → 404 otherwise), then `chat.MoveToProject(projectId,
+  now)`. Moving to the chat's current project is a harmless no-op that still bumps `UpdatedAt`. A
+  temporary chat is rejected here — `MoveToProject` returns `ChatErrors.CannotAddTemporaryChatToProject`
+  (the single enforcement point), surfaced by the handler.
+
+The chat is loaded owner-scoped first (`chats.GetByIdAsync` → 404 if missing or not the caller's). The
+handler returns `ErrorOr<Success>`; the endpoint responds **204 No Content**, matching `DeleteProject`.
 
 Plus one change to an existing endpoint:
 
 - `CreateChat` `Request` gains an optional `projectId` (`Guid?`), threaded through `CreateChatCommand`
-  → `CreateChatHandler` → `ChatThread.Create(..., projectId: ...)`. When `projectId` is supplied the
-  handler first verifies the project exists **and belongs to the caller**
-  (`projects.GetByIdAsync(projectId, userId)` → 404 otherwise), so a chat can never be created against
-  a foreign or missing project — consistent with `MoveChatToProjectHandler`. When both `projectId` and
-  `temporary-chat=true` are supplied, the handler returns the temporary-vs-project validation error.
+  → `CreateChatHandler`. **User-facing behavior is unchanged** ("new chat inside a project" is one
+  action), but internally the handler does **create-then-move**: `ChatThread.Create(...)` followed by
+  `thread.MoveToProject(projectId, now)`. When `projectId` is supplied the handler first verifies the
+  project exists **and belongs to the caller** (`projects.GetByIdAsync(projectId, userId)` → 404
+  otherwise), so a chat can never be created against a foreign or missing project — consistent with
+  `SetChatProjectHandler`. When both `projectId` and `temporary-chat=true` are supplied, the
+  `MoveToProject` call returns the temporary-vs-project validation error (the single enforcement
+  point), which the handler surfaces.
 
 **Listing behavior (the one read-model decision):** `GetChats` — the main sidebar list — returns
 **standalone chats only** (`ProjectId is null`). A project's conversations are returned by
@@ -240,7 +262,8 @@ POST /chats { message, modelId, projectId }
   → CreateChatCommand(projectId)
   → CreateChatHandler
       ├─ projects.GetByIdAsync(projectId, userId)  → 404 if missing / not owner (only when projectId set)
-      → ChatThread.Create(..., projectId)      // grouping stored on aggregate
+      ├─ ChatThread.Create(...)                 // always standalone first
+      → thread.MoveToProject(projectId, now)    // grouping applied; invariant enforced here
   → SaveChanges → chats.project_id set
   → TurnRequested(ids only) published           // no project data in payload
 ```
@@ -299,10 +322,9 @@ No API/endpoint tests — there is no API test project yet. Tests land in `Chat.
   throws on corrupt values.
 - `Project`: `Create` sets fields + timestamps; `Rename` / `UpdateInstructions` (incl. clear via
   `null`) / `UpdateAppearance` mutate and bump `UpdatedAt`.
-- `ChatThread`: `Create(projectId: X)` stores it; `MoveToProject(X)` sets it, `MoveToProject(null)`
-  clears it, both bump `UpdatedAt`; `MoveToProject` on a temporary chat returns the invariant error;
-  `Create(projectId, isTemporary: true)` is rejected; `BranchFrom` carries `ProjectId` onto the
-  branch.
+- `ChatThread`: `Create` yields a standalone chat (`ProjectId is null`); `MoveToProject(X)` sets it,
+  `MoveToProject(null)` clears it, both bump `UpdatedAt`; `MoveToProject` on a temporary chat returns
+  the invariant error; `BranchFrom` carries `ProjectId` onto the branch.
 - `PersonalizationSystemPrompt.Compose`: project-only → `<project_instructions>` present, no
   personalization sections; project + personalization → project section **precedes** profile/custom
   sections under one framing block; neither present → base prompt verbatim; ordering is stable.
@@ -313,11 +335,13 @@ No API/endpoint tests — there is no API test project yet. Tests land in `Chat.
 - `UpdateProjectHandler` applies partial updates; 404 for a non-owner/missing project.
 - `DeleteProjectHandler` calls `DeleteByProjectAsync` **and** removes the project in one unit; 404
   when absent.
-- `MoveChatToProjectHandler` moves a chat in/out; 404 when the target project isn't the caller's;
-  temporary-chat move surfaces the domain error.
-- `CreateChatHandler` forwards `projectId` into `ChatThread.Create`; a missing/foreign `projectId`
-  returns 404; `projectId + temporary` combination returns the validation error; `TurnRequested`
-  payload is unchanged (still ids only).
+- `SetChatProjectHandler` moves a chat in (non-null `projectId`) and out (null); 404 when the chat or
+  the target project isn't the caller's; a temporary-chat move-in surfaces the domain error; null
+  clears the association and can't fail.
+- `CreateChatHandler` creates the chat then calls `MoveToProject(projectId)` when a `projectId` is
+  supplied; a missing/foreign `projectId` returns 404; `projectId + temporary` returns the validation
+  error from `MoveToProject`; with no `projectId` the chat is standalone; `TurnRequested` payload is
+  unchanged (still ids only).
 - `ContextBuilder`: seeded project → `SystemPrompt` contains the project instructions ahead of
   personalization; `thread.ProjectId == null` → project repo not consulted and existing behavior is
   unchanged (regression guard).
