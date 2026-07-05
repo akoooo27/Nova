@@ -37,6 +37,7 @@ internal sealed class HangfireDashboardSecretFilter(string expectedSecret) : IDa
             (
                 CookieName,
                 provided,
+#pragma warning disable S2092
                 new CookieOptions
                 {
                     HttpOnly = true,
@@ -45,6 +46,7 @@ internal sealed class HangfireDashboardSecretFilter(string expectedSecret) : IDa
                     Secure = httpContext.Request.IsHttps,
                     MaxAge = TimeSpan.FromHours(8)
                 }
+#pragma warning restore S2092
             );
         }
 
