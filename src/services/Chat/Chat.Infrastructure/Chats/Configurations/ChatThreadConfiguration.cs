@@ -1,5 +1,7 @@
 using Chat.Domain.Chats;
 using Chat.Domain.Chats.ValueObjects;
+using Chat.Domain.Projects;
+using Chat.Domain.Projects.ValueObjects;
 using Chat.Domain.Shared;
 
 using Microsoft.EntityFrameworkCore;
@@ -87,6 +89,18 @@ internal sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThr
         builder.Property(x => x.IsArchived)
             .IsRequired();
 
+        builder.Property(x => x.ProjectId)
+            .HasConversion
+            (
+                id => id == null ? (Guid?)null : id.Value,
+                value => value == null ? null : ProjectId.FromDatabase(value.Value)
+            );
+
+        builder.HasOne<Project>()
+            .WithMany()
+            .HasForeignKey(x => x.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Ignore(x => x.IsPinned);
 
         builder.Property<uint>("xmin")
@@ -102,6 +116,8 @@ internal sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThr
 
         builder.HasIndex(x => new { x.UserId, x.UpdatedAt, x.Id })
             .IsDescending(false, true, false);
+
+        builder.HasIndex(x => new { x.UserId, x.ProjectId });
 
         builder.Ignore(x => x.DomainEvents);
     }

@@ -28,6 +28,7 @@ using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.Personalizations;
+using Chat.Domain.Projects;
 using Chat.Domain.SharedChats;
 using Chat.Infrastructure.Agents;
 using Chat.Infrastructure.Analytics;
@@ -43,6 +44,7 @@ using Chat.Infrastructure.ModelCatalog.Readers;
 using Chat.Infrastructure.ModelCatalog.Repositories;
 using Chat.Infrastructure.Options;
 using Chat.Infrastructure.Personalizations.Repositories;
+using Chat.Infrastructure.Projects.Repositories;
 using Chat.Infrastructure.ProviderLogos;
 using Chat.Infrastructure.SharedChats.Readers;
 using Chat.Infrastructure.SharedChats.Repositories;
@@ -122,6 +124,7 @@ public static class DependencyInjection
         services.AddScoped<ISharedChatRepository, SharedChatRepository>();
         services.AddScoped<IPersonalizationRepository, PersonalizationRepository>();
         services.AddScoped<IPersonalizationRepository, PersonalizationRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
 
         return services;
     }

@@ -1,5 +1,6 @@
 using Chat.Domain.Personalizations;
 using Chat.Domain.Personalizations.ValueObjects;
+using Chat.Domain.Projects;
 
 namespace Chat.Application.Turns;
 
@@ -15,25 +16,33 @@ internal static class PersonalizationSystemPrompt
         + "Apply it to your style, tone, and focus. It does NOT override your core identity "
         + "or safety guidelines; if any of it conflicts with those, ignore the conflicting part.";
 
-    public static string Compose(string basePrompt, Personalization? personalization)
+    public static string Compose
+    (
+        string basePrompt,
+        Project? project,
+        Personalization? personalization
+    )
     {
-        if (personalization is null)
-        {
-            return basePrompt;
-        }
-
         List<string> sections = [];
 
-        string? profile = FormatProfile(personalization.UserProfile);
-
-        if (profile is not null)
+        if (project?.Instructions is { } projectInstructions)
         {
-            sections.Add(profile);
+            sections.Add($"<project_instructions>\n{projectInstructions.Value}\n</project_instructions>");
         }
 
-        if (personalization.CustomInstructions is { } instructions)
+        if (personalization is not null)
         {
-            sections.Add($"<custom_instructions>\n{instructions.Value}\n</custom_instructions>");
+            string? profile = FormatProfile(personalization.UserProfile);
+
+            if (profile is not null)
+            {
+                sections.Add(profile);
+            }
+
+            if (personalization.CustomInstructions is { } instructions)
+            {
+                sections.Add($"<custom_instructions>\n{instructions.Value}\n</custom_instructions>");
+            }
         }
 
         if (sections.Count == 0)

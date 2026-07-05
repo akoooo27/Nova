@@ -1,6 +1,7 @@
 using Chat.Domain.Chats.Entities;
 using Chat.Domain.Chats.ValueObjects;
 using Chat.Domain.ModelCatalog.ValueObjects;
+using Chat.Domain.Projects.ValueObjects;
 using Chat.Domain.Shared;
 
 using ErrorOr;
@@ -33,6 +34,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
 
     public ChatBranchOrigin? BranchOrigin { get; private set; }
 
+    public ProjectId? ProjectId { get; private set; }
+
     public IReadOnlyCollection<ChatMessage> Messages => _messages;
 
     private ChatThread()
@@ -48,7 +51,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         ChatMessage root,
         DateTimeOffset createdAt,
         DateTimeOffset updatedAt,
-        bool isTemporary
+        bool isTemporary,
+        ProjectId? projectId = null
     ) : base(id)
     {
         UserId = userId;
@@ -57,6 +61,7 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         IsTemporary = isTemporary;
+        ProjectId = projectId;
         _messages = [root];
     }
 
@@ -66,7 +71,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         ChatTitle title,
         MessageContent firstUserMessage,
         DateTimeOffset createdAt,
-        bool isTemporary = false
+        bool isTemporary = false,
+        ProjectId? projectId = null
     )
     {
         ChatId id = ChatId.New();
@@ -88,7 +94,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             root: root,
             createdAt: createdAt,
             updatedAt: createdAt,
-            isTemporary: isTemporary
+            isTemporary: isTemporary,
+            projectId: projectId
         );
     }
 
@@ -526,6 +533,22 @@ public sealed class ChatThread : AggregateRoot<ChatId>
 
     public void Rename(ChatTitle title) =>
         Title = title;
+
+    public ErrorOr<Success> MoveToProject(ProjectId projectId, DateTimeOffset updatedAt)
+    {
+        if (IsTemporary)
+            return ChatErrors.CannotAddTemporaryChatToProject(Id);
+
+        ProjectId = projectId;
+        UpdatedAt = updatedAt;
+        return Result.Success;
+    }
+
+    public void RemoveFromProject(DateTimeOffset updatedAt)
+    {
+        ProjectId = null;
+        UpdatedAt = updatedAt;
+    }
 
     public ChatMessage? FindMessage(ChatMessageId messageId) =>
         _messages.SingleOrDefault(message => message.Id == messageId);
