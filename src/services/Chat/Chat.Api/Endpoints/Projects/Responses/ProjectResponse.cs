@@ -1,3 +1,4 @@
+using Chat.Application.Projects.Queries.ListProjects;
 using Chat.Application.Projects.Results;
 
 namespace Chat.Api.Endpoints.Projects.Responses;
@@ -27,5 +28,16 @@ internal sealed class ProjectResponse
         Theme = result.Theme,
         CreatedAt = result.CreatedAt,
         UpdatedAt = result.UpdatedAt
+    };
+
+    public static ProjectResponse From(ProjectSummaryReadModel summary) => new()
+    {
+        Id = summary.Id,
+        Name = summary.Name,
+        Instructions = summary.Instructions,
+        Emoji = summary.Emoji,
+        Theme = summary.Theme,
+        CreatedAt = summary.CreatedAt,
+        UpdatedAt = summary.UpdatedAt
     };
 }
