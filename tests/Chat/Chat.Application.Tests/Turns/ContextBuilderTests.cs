@@ -1,6 +1,7 @@
 using Chat.Application.Abstractions.Turns;
 using Chat.Application.Tests.ModelCatalog;
 using Chat.Application.Tests.ModelCatalog.LlmProviders;
+using Chat.Application.Tests.Projects;
 using Chat.Application.Turns;
 using Chat.Domain.Chats;
 using Chat.Domain.Chats.Entities;
@@ -24,13 +25,15 @@ public sealed class ContextBuilderTests
 
     private readonly FakePersonalizationRepository _personalizations = new();
 
+    private readonly FakeProjectRepository _projects = new();
+
     [Fact]
     public async Task BuildAsyncProducesChronologicalHistoryEndingAtTheUserMessage()
     {
         (ChatThread thread, ChatMessage assistant, _) = CreateThreadWithPendingTurn();
         TurnGenerationOptions options = new(ForceUseSearch: true);
 
-        ContextBuilder builder = new(_providers, _personalizations);
+        ContextBuilder builder = new(_providers, _personalizations, _projects);
 
         ErrorOr<TurnContext> context = await builder.BuildAsync
         (
@@ -59,7 +62,7 @@ public sealed class ContextBuilderTests
     {
         (ChatThread thread, ChatMessage assistant, LlmModel model) = CreateThreadWithPendingTurn();
 
-        ContextBuilder builder = new(new FakeLlmProviderRepository(), new FakePersonalizationRepository());
+        ContextBuilder builder = new(new FakeLlmProviderRepository(), new FakePersonalizationRepository(), new FakeProjectRepository());
 
         ErrorOr<TurnContext> context = await builder.BuildAsync
         (
@@ -99,7 +102,7 @@ public sealed class ContextBuilderTests
         ChatMessage followUp = thread.AddUserMessage(stoppedAssistant.Id, MessageContent.Create("Continue").Value, Now).Value;
         ChatMessage nextAssistant = thread.BeginAssistantMessage(followUp.Id, model.Id, Now).Value;
 
-        ContextBuilder builder = new(_providers, _personalizations);
+        ContextBuilder builder = new(_providers, _personalizations, _projects);
 
         ErrorOr<TurnContext> result = await builder
             .BuildAsync(thread, nextAssistant, RetrievedMemories.Empty, TurnGenerationOptions.Default, CancellationToken.None);
@@ -141,7 +144,7 @@ public sealed class ContextBuilderTests
         ));
         _personalizations.AddExisting(personalization);
 
-        ContextBuilder builder = new(_providers, _personalizations);
+        ContextBuilder builder = new(_providers, _personalizations, _projects);
 
         ErrorOr<TurnContext> context = await builder.BuildAsync
         (
@@ -163,7 +166,7 @@ public sealed class ContextBuilderTests
     {
         (ChatThread thread, ChatMessage assistant, _) = CreateThreadWithPendingTurn();
 
-        ContextBuilder builder = new(_providers, _personalizations);
+        ContextBuilder builder = new(_providers, _personalizations, _projects);
 
         ErrorOr<TurnContext> context = await builder.BuildAsync
         (

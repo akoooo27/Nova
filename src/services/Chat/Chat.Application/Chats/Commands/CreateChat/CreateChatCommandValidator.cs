@@ -14,5 +14,9 @@ internal sealed class CreateChatCommandValidator : AbstractValidator<CreateChatC
 
         RuleFor(x => x.LlmModelId)
             .NotEmpty();
+
+        RuleFor(x => x.ProjectId)
+            .NotEmpty()
+            .When(x => x.ProjectId is not null);
     }
 }

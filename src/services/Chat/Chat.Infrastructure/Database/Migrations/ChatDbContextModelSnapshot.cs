@@ -50,6 +50,10 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("pinned_at");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -84,6 +88,12 @@ namespace Chat.Infrastructure.Database.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_chats");
+
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("ix_chats_project_id");
+
+                    b.HasIndex("UserId", "ProjectId")
+                        .HasDatabaseName("ix_chats_user_id_project_id");
 
                     b.HasIndex("UserId", "UpdatedAt", "Id")
                         .IsDescending(false, true, false)
@@ -375,6 +385,55 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_personalizations_user_id");
 
                     b.ToTable("personalizations", (string)null);
+                });
+
+            modelBuilder.Entity("Chat.Domain.Projects.Project", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Emoji")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("emoji");
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)")
+                        .HasColumnName("instructions");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Theme")
+                        .HasColumnType("text")
+                        .HasColumnName("theme");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_projects");
+
+                    b.HasIndex("UserId", "UpdatedAt", "Id")
+                        .IsDescending(false, true, false)
+                        .HasDatabaseName("ix_projects_user_id_updated_at_id");
+
+                    b.ToTable("projects", (string)null);
                 });
 
             modelBuilder.Entity("Chat.Domain.SharedChats.SharedChat", b =>
@@ -680,6 +739,15 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_outbox_state_created");
 
                     b.ToTable("outbox_state", (string)null);
+                });
+
+            modelBuilder.Entity("Chat.Domain.Chats.ChatThread", b =>
+                {
+                    b.HasOne("Chat.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_chats_projects_project_id");
                 });
 
             modelBuilder.Entity("Chat.Domain.Chats.Entities.ChatMessage", b =>

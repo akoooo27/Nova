@@ -7,6 +7,7 @@ using Chat.Domain.Chats.Entities;
 using Chat.Domain.Chats.ValueObjects;
 using Chat.Domain.ModelCatalog;
 using Chat.Domain.ModelCatalog.ValueObjects;
+using Chat.Domain.Projects.ValueObjects;
 using Chat.Domain.Shared;
 
 using ErrorOr;
@@ -96,6 +97,20 @@ internal sealed class CreateChatHandler(
             createdAt: now,
             isTemporary: command.IsTemporary
         );
+
+        if (command.ProjectId is not null)
+        {
+            ErrorOr<ProjectId> projectIdResult = ProjectId.Create(command.ProjectId.Value);
+
+            if (projectIdResult.IsError)
+            {
+                return projectIdResult.Errors;
+            }
+
+            ProjectId projectId = projectIdResult.Value;
+
+            thread.MoveToProject(projectId, now);
+        }
 
         ChatMessageId userMessageId = thread.CurrentMessageId;
 

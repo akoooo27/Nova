@@ -158,4 +158,11 @@ public static class ChatErrors
             code: "Chat.CannotStopNonGenerating",
             description: $"Message '{messageId.Value}' is not generating and cannot be stopped."
         );
+
+    public static Error CannotAddTemporaryChatToProject(ChatId chatId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotAddTemporaryChatToProject",
+            description: $"Temporary chat '{chatId.Value}' cannot be added to a project."
+        );
 }
