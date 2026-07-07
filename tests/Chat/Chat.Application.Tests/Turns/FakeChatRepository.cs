@@ -57,4 +57,48 @@ internal sealed class FakeChatRepository : IChatRepository
 
         return Task.FromResult(removed);
     }
+
+    public Task<int> DeleteByIdAsync
+    (
+        ChatId id,
+        UserId userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        int removed = _threads.RemoveAll
+        (
+            thread => thread.Id == id && thread.UserId == userId && !thread.IsTemporary
+        );
+
+        return Task.FromResult(removed);
+    }
+
+    public Task<int> ArchiveAllAsync(UserId userId, CancellationToken cancellationToken = default)
+    {
+        List<ChatThread> targets = _threads
+            .Where(thread => thread.UserId == userId && !thread.IsTemporary && !thread.IsArchived)
+            .ToList();
+
+        foreach (ChatThread thread in targets)
+        {
+            thread.Archive();
+        }
+
+        return Task.FromResult(targets.Count);
+    }
+
+    public Task<int> DeleteAllAsync
+    (
+        UserId userId,
+        bool includeTemporary = false,
+        CancellationToken cancellationToken = default
+    )
+    {
+        int removed = _threads.RemoveAll
+        (
+            thread => thread.UserId == userId && (includeTemporary || !thread.IsTemporary)
+        );
+
+        return Task.FromResult(removed);
+    }
 }
