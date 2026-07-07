@@ -65,4 +65,43 @@ internal sealed class ChatRepository(ChatDbContext db) : IChatRepository
 
         return totalDeleted;
     }
+
+    public async Task<int> DeleteByIdAsync
+    (
+        ChatId id,
+        UserId userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await db.ChatThreads
+            .Where(chat => chat.Id == id && chat.UserId == userId && !chat.IsTemporary)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> ArchiveAllAsync
+    (
+        UserId userId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await db.ChatThreads
+            .Where(chat => chat.UserId == userId && !chat.IsTemporary && !chat.IsArchived)
+            .ExecuteUpdateAsync
+            (
+                setters => setters.SetProperty(chat => chat.IsArchived, true),
+                cancellationToken
+            );
+    }
+
+    public async Task<int> DeleteAllAsync
+    (
+        UserId userId,
+        bool includeTemporary = false,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await db.ChatThreads
+            .Where(chat => chat.UserId == userId && (includeTemporary || !chat.IsTemporary))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

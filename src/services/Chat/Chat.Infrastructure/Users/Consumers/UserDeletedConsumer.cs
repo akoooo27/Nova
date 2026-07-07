@@ -1,5 +1,9 @@
+using Chat.Domain.Chats;
+using Chat.Domain.Shared;
 using Chat.Infrastructure.Database;
 using Chat.Infrastructure.Users.Models;
+
+using ErrorOr;
 
 using MassTransit;
 
@@ -10,7 +14,10 @@ using Shared.Contracts.IdentityIngress.Events;
 
 namespace Chat.Infrastructure.Users.Consumers;
 
-internal sealed partial class UserDeletedConsumer(ChatDbContext db, ILogger<UserDeletedConsumer> logger)
+internal sealed partial class UserDeletedConsumer(
+    ChatDbContext db,
+    IChatRepository chats,
+    ILogger<UserDeletedConsumer> logger)
     : IConsumer<UserDeleted>
 {
     public async Task Consume(ConsumeContext<UserDeleted> context)
@@ -44,6 +51,24 @@ internal sealed partial class UserDeletedConsumer(ChatDbContext db, ILogger<User
 
         user.MarkDeleted(message.OccurredAt);
 
+        ErrorOr<UserId> userIdResult = UserId.Create(message.ProviderUserId);
+
+        if (userIdResult.IsError)
+        {
+            LogChatPurgeSkippedForInvalidUserId(message.EventId, message.Provider, message.ProviderUserId);
+        }
+        else
+        {
+            int purged = await chats.DeleteAllAsync
+            (
+                userId: userIdResult.Value,
+                includeTemporary: true,
+                cancellationToken: context.CancellationToken
+            );
+
+            LogChatsPurgedForDeletedUser(purged, message.Provider, message.ProviderUserId);
+        }
+
         await db.SaveChangesAsync(context.CancellationToken);
 
         LogUserDeletedProjected(message.EventId, message.Provider, message.ProviderUserId);
@@ -56,4 +81,12 @@ internal sealed partial class UserDeletedConsumer(ChatDbContext db, ILogger<User
     [LoggerMessage(EventId = 2, Level = LogLevel.Information,
         Message = "Ignored stale deleted identity user event {EventId} for {Provider}:{ProviderUserId}")]
     private partial void LogStaleUserDeletedIgnored(string eventId, string provider, string providerUserId);
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information,
+        Message = "Purged {PurgedChatCount} chats for deleted identity user {Provider}:{ProviderUserId}")]
+    private partial void LogChatsPurgedForDeletedUser(int purgedChatCount, string provider, string providerUserId);
+
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning,
+        Message = "Skipped chat purge for event {EventId}: invalid user id {Provider}:{ProviderUserId}")]
+    private partial void LogChatPurgeSkippedForInvalidUserId(string eventId, string provider, string providerUserId);
 }
