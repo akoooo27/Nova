@@ -1,0 +1,8 @@
+<Project>
+  <!--
+    Intentionally empty. Its presence stops MSBuild from walking up to the
+    repo-root Directory.Build.props, so the Pulumi infra project does NOT
+    inherit the app's SonarAnalyzer/ErrorOr injection, TreatWarningsAsErrors,
+    AnalysisMode=All, or GenerateDocumentationFile. Infra has its own lifecycle.
+  -->
+</Project>
