@@ -1,0 +1,4 @@
+environment:
+  - nova/aws-dev
+config:
+  aws:region: eu-central-1

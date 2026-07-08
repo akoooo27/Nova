@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      Shadows the repo-root Directory.Packages.props (the nearest file wins).
+      CPM is disabled here so infra/Nova.Infra pins its own package versions
+      directly in the csproj, decoupled from the app's version set.
+    -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

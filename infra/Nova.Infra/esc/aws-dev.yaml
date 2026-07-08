@@ -1,0 +1,11 @@
+# Reference definition for the Pulumi ESC environment `nova/aws-dev`.
+# This file documents the environment's shape and is copied into Pulumi Cloud
+values:
+  aws:
+    accessKeyId:
+      fn::secret: "REPLACE_WITH_AWS_ACCESS_KEY_ID"
+    secretAccessKey:
+      fn::secret: "REPLACE_WITH_AWS_SECRET_ACCESS_KEY"
+  environmentVariables:
+    AWS_ACCESS_KEY_ID: ${aws.accessKeyId}
+    AWS_SECRET_ACCESS_KEY: ${aws.secretAccessKey}
