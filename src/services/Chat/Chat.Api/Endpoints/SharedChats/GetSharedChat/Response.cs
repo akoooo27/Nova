@@ -11,4 +11,6 @@ internal sealed class Response
     public required Guid CurrentNode { get; init; }
 
     public required IReadOnlyDictionary<string, MappingNodeResponse> Mapping { get; init; }
+
+    public required bool AllowRemix { get; init; }
 }

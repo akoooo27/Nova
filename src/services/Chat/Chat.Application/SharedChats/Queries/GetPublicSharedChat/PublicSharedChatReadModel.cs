@@ -6,5 +6,6 @@ public sealed record PublicSharedChatReadModel
     string Title,
     DateTimeOffset CreatedAt,
     Guid CurrentMessageId,
+    bool AllowRemix,
     IReadOnlyList<PublicSharedChatMessageReadModel> Messages
 );

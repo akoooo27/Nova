@@ -12,4 +12,11 @@ public static class SharedChatOperationErrors
             code: "SharedChatId.NotFound",
             description: $"No shared chat found with id '{sharedChatId.Value}'."
         );
+
+    public static Error RemixNotAllowed(SharedChatId sharedChatId) =>
+        Error.Forbidden
+        (
+            code: "SharedChat.RemixNotAllowed",
+            description: $"Shared chat '{sharedChatId.Value}' does not permit remixing."
+        );
 }

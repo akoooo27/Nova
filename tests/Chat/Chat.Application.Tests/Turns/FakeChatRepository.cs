@@ -101,4 +101,12 @@ internal sealed class FakeChatRepository : IChatRepository
 
         return Task.FromResult(removed);
     }
+
+    public Task<ChatThread?> GetSnapshotByChatIdAsync(ChatId id, CancellationToken cancellationToken = default)
+    {
+        SnapshotGetCallCount++;
+        ChatThread? thread = _threads.FirstOrDefault(x => x.Id == id);
+
+        return Task.FromResult(thread);
+    }
 }

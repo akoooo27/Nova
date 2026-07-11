@@ -62,6 +62,10 @@ internal sealed class SharedChatConfiguration : IEntityTypeConfiguration<SharedC
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
+        builder.Property(x => x.AllowRemix)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.HasIndex(x => new { x.ChatId, x.CurrentMessageId })
             .IsUnique();
 

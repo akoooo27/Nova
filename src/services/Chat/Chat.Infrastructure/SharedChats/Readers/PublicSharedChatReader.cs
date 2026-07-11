@@ -15,7 +15,8 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
                                    id                 as "Id",
                                    title              as "Title",
                                    created_at         as "CreatedAt",
-                                   current_message_id as "CurrentMessageId"
+                                   current_message_id as "CurrentMessageId",
+                                   allow_remix        as "AllowRemix"
                                from shared_chats
                                where id = @SharedChatId;
 
@@ -115,6 +116,7 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
             Title: sharedChat.Title,
             CreatedAt: sharedChat.CreatedAt,
             CurrentMessageId: sharedChat.CurrentMessageId,
+            AllowRemix: sharedChat.AllowRemix,
             Messages: messages
         );
     }
@@ -149,7 +151,8 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
         Guid Id,
         string Title,
         DateTime CreatedAt,
-        Guid CurrentMessageId
+        Guid CurrentMessageId,
+        bool AllowRemix
     );
 
     private sealed record MessageRow

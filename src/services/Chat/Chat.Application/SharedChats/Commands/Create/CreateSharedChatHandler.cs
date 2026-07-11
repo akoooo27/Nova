@@ -87,7 +87,8 @@ internal sealed class CreateSharedChatHandler(
             chatId: chatId,
             currentMessageId: currentMessageId,
             title: source.Title,
-            createdAt: dateTimeProvider.UtcNow
+            createdAt: dateTimeProvider.UtcNow,
+            allowRemix: command.AllowRemix
         );
 
         bool inserted = await sharedChats.TryAddAsync(candidate, cancellationToken);

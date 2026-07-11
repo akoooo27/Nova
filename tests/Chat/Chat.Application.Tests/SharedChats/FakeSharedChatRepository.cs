@@ -79,4 +79,11 @@ internal sealed class FakeSharedChatRepository : ISharedChatRepository
 
         return Task.FromResult(removed);
     }
+
+    public Task<SharedChat?> GetForRemixAsync(SharedChatId id, CancellationToken cancellationToken = default)
+    {
+        SharedChat? match = _items.FirstOrDefault(x => x.Id == id);
+
+        return Task.FromResult(match);
+    }
 }

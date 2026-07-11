@@ -21,6 +21,16 @@ public interface ISharedChatRepository
         CancellationToken cancellationToken = default
     );
 
+    /// <summary>
+    /// Loads a shared chat by id WITHOUT owner scoping, no-tracking. Used by the remix flow to read
+    /// the sharer's consent flag and source pointer for any authenticated viewer.
+    /// </summary>
+    Task<SharedChat?> GetForRemixAsync
+    (
+        SharedChatId id,
+        CancellationToken cancellationToken = default
+    );
+
     Task<bool> TryAddAsync(SharedChat sharedChat, CancellationToken cancellationToken = default);
 
     void Remove(SharedChat sharedChat);

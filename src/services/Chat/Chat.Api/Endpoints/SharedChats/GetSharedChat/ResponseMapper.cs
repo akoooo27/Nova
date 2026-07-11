@@ -16,7 +16,8 @@ internal static class ResponseMapper
             Title = readModel.Title,
             CreatedAt = readModel.CreatedAt,
             CurrentNode = readModel.CurrentMessageId,
-            Mapping = mapping
+            Mapping = mapping,
+            AllowRemix = readModel.AllowRemix
         };
     }
 

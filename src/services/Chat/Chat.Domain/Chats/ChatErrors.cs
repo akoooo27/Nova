@@ -165,4 +165,18 @@ public static class ChatErrors
             code: "Chat.CannotAddTemporaryChatToProject",
             description: $"Temporary chat '{chatId.Value}' cannot be added to a project."
         );
+
+    public static Error RemixTargetMustBeAssistant(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.RemixTargetMustBeAssistant",
+            description: $"The remix source node '{messageId.Value}' must be a completed assistant message."
+        );
+
+    public static Error InvalidRemixPath(ChatMessageId messageId) =>
+        Error.Unexpected
+        (
+            code: "Chat.InvalidRemixPath",
+            description: $"The persisted ancestry for remix source message '{messageId.Value}' is invalid."
+        );
 }

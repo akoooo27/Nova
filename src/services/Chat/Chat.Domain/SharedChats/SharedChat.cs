@@ -18,6 +18,8 @@ public sealed class SharedChat : AggregateRoot<SharedChatId>
 
     public DateTimeOffset CreatedAt { get; private set; }
 
+    public bool AllowRemix { get; private set; }
+
     private SharedChat()
     {
         // EF Core materialization only
@@ -30,7 +32,8 @@ public sealed class SharedChat : AggregateRoot<SharedChatId>
         ChatId chatId,
         ChatMessageId currentMessageId,
         ChatTitle title,
-        DateTimeOffset createdAt
+        DateTimeOffset createdAt,
+        bool allowRemix
     ) : base(id)
     {
         UserId = userId;
@@ -38,6 +41,7 @@ public sealed class SharedChat : AggregateRoot<SharedChatId>
         CurrentMessageId = currentMessageId;
         Title = title;
         CreatedAt = createdAt;
+        AllowRemix = allowRemix;
     }
 
     public static SharedChat Create
@@ -46,7 +50,8 @@ public sealed class SharedChat : AggregateRoot<SharedChatId>
         ChatId chatId,
         ChatMessageId currentMessageId,
         ChatTitle title,
-        DateTimeOffset createdAt
+        DateTimeOffset createdAt,
+        bool allowRemix = false
     ) => new
     (
         id: SharedChatId.New(),
@@ -54,6 +59,7 @@ public sealed class SharedChat : AggregateRoot<SharedChatId>
         chatId: chatId,
         currentMessageId: currentMessageId,
         title: title,
-        createdAt: createdAt
+        createdAt: createdAt,
+        allowRemix: allowRemix
     );
 }
