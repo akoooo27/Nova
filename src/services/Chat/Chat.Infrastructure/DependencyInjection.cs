@@ -25,6 +25,7 @@ using Chat.Application.SharedChats.Queries.GetSharedChats;
 using Chat.Application.Turns;
 using Chat.Application.Turns.Tools;
 using Chat.Application.Turns.Tools.Gmail;
+using Chat.Domain.AgentRuns;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
@@ -32,6 +33,7 @@ using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.Personalizations;
 using Chat.Domain.Projects;
 using Chat.Domain.SharedChats;
+using Chat.Infrastructure.AgentRuns.Repositories;
 using Chat.Infrastructure.Agents;
 using Chat.Infrastructure.Analytics;
 using Chat.Infrastructure.Arcade;
@@ -128,6 +130,7 @@ public static class DependencyInjection
         services.AddScoped<IPersonalizationRepository, PersonalizationRepository>();
         services.AddScoped<IPersonalizationRepository, PersonalizationRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IAgentRunRepository, AgentRunRepository>();
 
         return services;
     }

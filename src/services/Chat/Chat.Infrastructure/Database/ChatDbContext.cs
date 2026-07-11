@@ -1,4 +1,5 @@
 using Chat.Application.Abstractions.Database;
+using Chat.Domain.AgentRuns;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
@@ -35,6 +36,8 @@ public sealed class ChatDbContext(
     public DbSet<Personalization> Personalizations => Set<Personalization>();
 
     public DbSet<Project> Projects => Set<Project>();
+
+    public DbSet<AgentRun> AgentRuns => Set<AgentRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
