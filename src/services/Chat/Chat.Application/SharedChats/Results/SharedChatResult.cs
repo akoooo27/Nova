@@ -7,5 +7,6 @@ public sealed record SharedChatResult
     Guid ChatId,
     Guid CurrentMessageId,
     DateTimeOffset CreatedAt,
+    bool AllowRemix,
     bool AlreadyExists
 );

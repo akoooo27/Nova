@@ -3,6 +3,7 @@ using Chat.Domain.Chats.ValueObjects;
 using Chat.Domain.ModelCatalog.ValueObjects;
 using Chat.Domain.Projects.ValueObjects;
 using Chat.Domain.Shared;
+using Chat.Domain.SharedChats.ValueObjects;
 
 using ErrorOr;
 
@@ -33,6 +34,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
     public bool IsPinned => PinnedAt is not null;
 
     public ChatBranchOrigin? BranchOrigin { get; private set; }
+
+    public ChatRemixOrigin? RemixOrigin { get; private set; }
 
     public ProjectId? ProjectId { get; private set; }
 
@@ -200,6 +203,113 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         branch.SetHead(copiedIds[branchPointId], createdAt);
 
         return branch;
+    }
+
+    public static ErrorOr<ChatThread> CreateRemix
+    (
+        UserId remixerUserId,
+        ChatThread source,
+        ChatMessageId sharedNodeId,
+        SharedChatId shareId,
+        ChatTitle title,
+        DateTimeOffset createdAt
+    )
+    {
+        if (source.IsTemporary)
+        {
+            throw new DomainException("Cannot remix a temporary chat.");
+        }
+
+        ChatMessage? sharedNode = source.FindMessage(sharedNodeId);
+
+        if (sharedNode is null)
+        {
+            return ChatErrors.MessageNotFound(sharedNodeId);
+        }
+
+        if (sharedNode.Role != MessageRole.Assistant || sharedNode.Status == MessageStatus.Generating)
+        {
+            return ChatErrors.RemixTargetMustBeAssistant(sharedNodeId);
+        }
+
+        List<ChatMessage> sourcePath = [];
+        HashSet<ChatMessageId> visited = [];
+        ChatMessage cursor = sharedNode;
+
+        while (true)
+        {
+            if (!visited.Add(cursor.Id))
+            {
+                return ChatErrors.InvalidRemixPath(sharedNodeId);
+            }
+
+            sourcePath.Add(cursor);
+
+            if (cursor.ParentMessageId is null)
+            {
+                break;
+            }
+
+            ChatMessage? parent = source.FindMessage(cursor.ParentMessageId);
+
+            if (parent is null)
+            {
+                return ChatErrors.InvalidRemixPath(sharedNodeId);
+            }
+
+            cursor = parent;
+        }
+
+        ChatMessage root = sourcePath[^1];
+
+        if (root.Role != MessageRole.User || root.ParentMessageId is not null)
+        {
+            return ChatErrors.InvalidRemixPath(sharedNodeId);
+        }
+
+        sourcePath.Reverse();
+
+        ChatId remixId = ChatId.New();
+        Dictionary<ChatMessageId, ChatMessageId> copiedIds = sourcePath.ToDictionary
+        (
+            message => message.Id,
+            _ => ChatMessageId.New()
+        );
+
+        List<ChatMessage> copiedMessages = sourcePath
+            .Select(message => message.CopyForBranch
+            (
+                id: copiedIds[message.Id],
+                chatId: remixId,
+                parentMessageId: message.ParentMessageId is null
+                    ? null
+                    : copiedIds[message.ParentMessageId]
+            ))
+            .ToList();
+
+        ChatThread remix = new
+        (
+            id: remixId,
+            userId: remixerUserId,
+            title: title,
+            root: copiedMessages[0],
+            createdAt: createdAt,
+            updatedAt: createdAt,
+            isTemporary: false
+        );
+
+        remix.RemixOrigin = ChatRemixOrigin.Create
+        (
+            sourceChatId: source.Id,
+            sourceMessageId: sharedNodeId,
+            shareId: shareId
+        );
+
+        remix._messages.AddRange(copiedMessages.Skip(1));
+
+        remix.SetHead(copiedIds[sharedNodeId], createdAt);
+
+        return remix;
     }
 
     /// <summary>

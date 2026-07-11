@@ -6,4 +6,9 @@ using Mediator;
 
 namespace Chat.Application.SharedChats.Commands.Create;
 
-public sealed record CreateSharedChatCommand(Guid ChatId, Guid CurrentMessageId) : ICommand<ErrorOr<SharedChatResult>>;
+public sealed record CreateSharedChatCommand
+(
+    Guid ChatId,
+    Guid CurrentMessageId,
+    bool AllowRemix = false
+) : ICommand<ErrorOr<SharedChatResult>>;

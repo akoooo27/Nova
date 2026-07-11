@@ -10,6 +10,7 @@ internal sealed record SharedChatResponse
     Guid ChatId,
     Guid CurrentMessageId,
     DateTimeOffset CreatedAt,
+    bool AllowRemix,
     bool AlreadyExists
 )
 {
@@ -21,6 +22,7 @@ internal sealed record SharedChatResponse
         ChatId: result.ChatId,
         CurrentMessageId: result.CurrentMessageId,
         CreatedAt: result.CreatedAt,
+        AllowRemix: result.AllowRemix,
         AlreadyExists: result.AlreadyExists
     );
 }

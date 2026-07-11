@@ -12,6 +12,7 @@ public static class SharedChatResultMapper
             ChatId: sharedChat.ChatId.Value,
             CurrentMessageId: sharedChat.CurrentMessageId.Value,
             CreatedAt: sharedChat.CreatedAt,
+            AllowRemix: sharedChat.AllowRemix,
             AlreadyExists: alreadyExists
         );
 }

@@ -2,6 +2,8 @@ using Chat.Domain.Chats;
 using Chat.Domain.Chats.Entities;
 using Chat.Domain.Chats.ValueObjects;
 using Chat.Domain.ModelCatalog.ValueObjects;
+using Chat.Domain.Shared;
+using Chat.Domain.SharedChats.ValueObjects;
 
 using ErrorOr;
 
@@ -1060,6 +1062,155 @@ public sealed class ChatThreadTests
         SetParentForCorruptionTest(assistant, null);
 
         AssertError(chat.ValidateShareAt(assistant.Id), ErrorType.Unexpected, "Chat.InvalidSharePath");
+    }
+
+    [Fact]
+    public void CreateRemixCopiesSharedPathWithNewIdsIndependentMetadataAndRemixOrigin()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        source.Pin(TestChatFactory.CreatedAt.AddMinutes(1));
+        source.Archive();
+        ChatMessage root = TestChatFactory.RootMessage(source);
+        ChatMessage firstAssistant = CompleteAssistant(source, root.Id, TestChatFactory.CreatedAt.AddMinutes(2));
+        ChatMessage followUp = AddUser(source, firstAssistant.Id, TestChatFactory.CreatedAt.AddMinutes(4), "Follow up");
+        ChatMessage sharedNode = CompleteAssistant(source, followUp.Id, TestChatFactory.CreatedAt.AddMinutes(5));
+        _ = AddUser(source, sharedNode.Id, TestChatFactory.CreatedAt.AddMinutes(7), "Excluded descendant");
+        ChatMessage[] sourcePath = [root, firstAssistant, followUp, sharedNode];
+
+        UserId remixer = UserId.FromDatabase("auth0|remixer");
+        SharedChatId shareId = SharedChatId.New();
+        ChatTitle title = ChatTitle.FromDatabase("Shared conversation");
+        DateTimeOffset remixedAt = TestChatFactory.CreatedAt.AddHours(1);
+
+        ErrorOr<ChatThread> result = ChatThread.CreateRemix(remixer, source, sharedNode.Id, shareId, title, remixedAt);
+
+        Assert.False(result.IsError);
+        ChatThread remix = result.Value;
+        ChatMessage[] copiedPath = GetActivePath(remix);
+        Assert.Equal(sourcePath.Length, copiedPath.Length);
+        Assert.Equal(sourcePath.Length, remix.Messages.Count);
+        Assert.DoesNotContain(remix.Messages, copied => source.Messages.Any(original => original.Id == copied.Id));
+
+        for (int index = 0; index < sourcePath.Length; index++)
+        {
+            Assert.Equal(sourcePath[index].Role, copiedPath[index].Role);
+            Assert.Equal(sourcePath[index].Content, copiedPath[index].Content);
+            Assert.Equal(sourcePath[index].Status, copiedPath[index].Status);
+            Assert.Equal(0, copiedPath[index].SiblingIndex.Value);
+            Assert.Equal(index == 0 ? null : copiedPath[index - 1].Id, copiedPath[index].ParentMessageId);
+        }
+
+        Assert.Equal(remixer, remix.UserId);
+        Assert.Equal("Shared conversation", remix.Title.Value);
+        Assert.False(remix.IsTemporary);
+        Assert.False(remix.IsPinned);
+        Assert.False(remix.IsArchived);
+        Assert.Null(remix.ProjectId);
+        Assert.Equal(remixedAt, remix.CreatedAt);
+        Assert.Equal(remixedAt, remix.UpdatedAt);
+        Assert.Equal(copiedPath[^1].Id, remix.CurrentMessageId);
+        Assert.Equal(shareId, remix.RemixOrigin!.ShareId);
+        Assert.Equal(source.Id, remix.RemixOrigin.SourceChatId);
+        Assert.Equal(sharedNode.Id, remix.RemixOrigin.SourceMessageId);
+    }
+
+    [Fact]
+    public void CreateRemixRejectsUserSourceNode()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(source);
+
+        ErrorOr<ChatThread> result = ChatThread.CreateRemix
+        (
+            UserId.FromDatabase("auth0|remixer"),
+            source,
+            root.Id,
+            SharedChatId.New(),
+            ChatTitle.FromDatabase("Shared"),
+            TestChatFactory.CreatedAt
+        );
+
+        AssertError(result, ErrorType.Conflict, "Chat.RemixTargetMustBeAssistant");
+    }
+
+    [Fact]
+    public void CreateRemixRejectsGeneratingAssistantSourceNode()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage assistant = BeginAssistant(source);
+
+        ErrorOr<ChatThread> result = ChatThread.CreateRemix
+        (
+            UserId.FromDatabase("auth0|remixer"),
+            source,
+            assistant.Id,
+            SharedChatId.New(),
+            ChatTitle.FromDatabase("Shared"),
+            TestChatFactory.CreatedAt
+        );
+
+        AssertError(result, ErrorType.Conflict, "Chat.RemixTargetMustBeAssistant");
+    }
+
+    [Fact]
+    public void CreateRemixReturnsMessageNotFoundForUnknownNode()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+
+        ErrorOr<ChatThread> result = ChatThread.CreateRemix
+        (
+            UserId.FromDatabase("auth0|remixer"),
+            source,
+            ChatMessageId.New(),
+            SharedChatId.New(),
+            ChatTitle.FromDatabase("Shared"),
+            TestChatFactory.CreatedAt
+        );
+
+        AssertError(result, ErrorType.NotFound, "Chat.MessageNotFound");
+    }
+
+    [Fact]
+    public void CreateRemixRejectsCyclicPersistedPath()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage root = TestChatFactory.RootMessage(source);
+        ChatMessage assistant = CompleteAssistant(source);
+        SetParentForCorruptionTest(root, assistant.Id);
+
+        ErrorOr<ChatThread> result = ChatThread.CreateRemix
+        (
+            UserId.FromDatabase("auth0|remixer"),
+            source,
+            assistant.Id,
+            SharedChatId.New(),
+            ChatTitle.FromDatabase("Shared"),
+            TestChatFactory.CreatedAt
+        );
+
+        AssertError(result, ErrorType.Unexpected, "Chat.InvalidRemixPath");
+    }
+
+    [Fact]
+    public void CreateRemixDoesNotMutateSource()
+    {
+        ChatThread source = TestChatFactory.CreateThread();
+        ChatMessage assistant = CompleteAssistant(source);
+        int sourceCountBefore = source.Messages.Count;
+        ChatMessageId sourceHeadBefore = source.CurrentMessageId;
+
+        _ = ChatThread.CreateRemix
+        (
+            UserId.FromDatabase("auth0|remixer"),
+            source,
+            assistant.Id,
+            SharedChatId.New(),
+            ChatTitle.FromDatabase("Shared"),
+            TestChatFactory.CreatedAt.AddHours(1)
+        );
+
+        Assert.Equal(sourceCountBefore, source.Messages.Count);
+        Assert.Equal(sourceHeadBefore, source.CurrentMessageId);
     }
 
     private static ChatMessage[] GetActivePath(ChatThread chat)

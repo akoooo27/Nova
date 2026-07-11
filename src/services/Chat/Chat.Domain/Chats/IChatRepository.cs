@@ -24,6 +24,17 @@ public interface IChatRepository
         CancellationToken cancellationToken = default
     );
 
+    /// <summary>
+    /// Loads a chat with its messages by id WITHOUT owner scoping, no-tracking. Used only by the
+    /// remix flow, authorized by the source share's <c>allow_remix</c> consent. The returned
+    /// aggregate is a detached snapshot that must not be mutated or persisted.
+    /// </summary>
+    Task<ChatThread?> GetSnapshotByChatIdAsync
+    (
+        ChatId id,
+        CancellationToken cancellationToken = default
+    );
+
     void Add(ChatThread chat);
 
     Task<int> DeleteExpiredTemporaryChatsAsync

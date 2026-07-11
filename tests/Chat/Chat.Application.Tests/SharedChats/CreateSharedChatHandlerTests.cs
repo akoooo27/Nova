@@ -52,6 +52,42 @@ public sealed class CreateSharedChatHandlerTests
     }
 
     [Fact]
+    public async Task HandlePersistsAllowRemixWhenRequested()
+    {
+        ChatThread source = SharedChatTestFactory.CreateShareableThread(Now.AddHours(-1));
+        _chats.Seed(source);
+        ChatMessageId node = source.CurrentMessageId;
+
+        ErrorOr<SharedChatResult> result = await CreateHandler().Handle
+        (
+            new CreateSharedChatCommand(source.Id.Value, node.Value, AllowRemix: true),
+            CancellationToken.None
+        );
+
+        Assert.False(result.IsError);
+        Assert.True(result.Value.AllowRemix);
+        Assert.True(Assert.Single(_sharedChats.Items).AllowRemix);
+    }
+
+    [Fact]
+    public async Task HandleDefaultsAllowRemixToFalse()
+    {
+        ChatThread source = SharedChatTestFactory.CreateShareableThread(Now.AddHours(-1));
+        _chats.Seed(source);
+        ChatMessageId node = source.CurrentMessageId;
+
+        ErrorOr<SharedChatResult> result = await CreateHandler().Handle
+        (
+            new CreateSharedChatCommand(source.Id.Value, node.Value),
+            CancellationToken.None
+        );
+
+        Assert.False(result.IsError);
+        Assert.False(result.Value.AllowRemix);
+        Assert.False(Assert.Single(_sharedChats.Items).AllowRemix);
+    }
+
+    [Fact]
     public async Task HandleReturnsExistingShareWithoutReplacingMetadata()
     {
         ChatThread source = SharedChatTestFactory.CreateShareableThread(Now.AddHours(-1));

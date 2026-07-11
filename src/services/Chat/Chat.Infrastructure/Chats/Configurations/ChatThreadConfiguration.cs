@@ -3,6 +3,7 @@ using Chat.Domain.Chats.ValueObjects;
 using Chat.Domain.Projects;
 using Chat.Domain.Projects.ValueObjects;
 using Chat.Domain.Shared;
+using Chat.Domain.SharedChats.ValueObjects;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -13,11 +14,21 @@ internal sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThr
 {
     public void Configure(EntityTypeBuilder<ChatThread> builder)
     {
-        builder.ToTable("chats", table => table.HasCheckConstraint
-        (
-            "ck_chats_branch_origin_complete",
-            "(branched_from_chat_id is null) = (branched_from_message_id is null)"
-        ));
+        builder.ToTable("chats", table =>
+        {
+            table.HasCheckConstraint
+            (
+                "ck_chats_branch_origin_complete",
+                "(branched_from_chat_id is null) = (branched_from_message_id is null)"
+            );
+
+            table.HasCheckConstraint
+            (
+                "ck_chats_remix_origin_complete",
+                "(remixed_from_share_id is null) = (remixed_from_chat_id is null) "
+                + "and (remixed_from_share_id is null) = (remixed_from_message_id is null)"
+            );
+        });
 
         builder.HasKey(x => x.Id);
 
@@ -73,6 +84,35 @@ internal sealed class ChatThreadConfiguration : IEntityTypeConfiguration<ChatThr
                     value => ChatMessageId.FromDatabase(value)
                 )
                 .HasColumnName("branched_from_message_id");
+        });
+
+        builder.ComplexProperty(x => x.RemixOrigin, origin =>
+        {
+            origin.IsRequired(false);
+
+            origin.Property(value => value.ShareId)
+                .HasConversion
+                (
+                    id => id.Value,
+                    value => SharedChatId.FromDatabase(value)
+                )
+                .HasColumnName("remixed_from_share_id");
+
+            origin.Property(value => value.SourceChatId)
+                .HasConversion
+                (
+                    id => id.Value,
+                    value => ChatId.FromDatabase(value)
+                )
+                .HasColumnName("remixed_from_chat_id");
+
+            origin.Property(value => value.SourceMessageId)
+                .HasConversion
+                (
+                    id => id.Value,
+                    value => ChatMessageId.FromDatabase(value)
+                )
+                .HasColumnName("remixed_from_message_id");
         });
 
         builder.Property(x => x.CreatedAt)

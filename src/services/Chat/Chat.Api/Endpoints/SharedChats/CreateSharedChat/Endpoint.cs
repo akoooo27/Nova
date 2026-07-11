@@ -13,7 +13,11 @@ using Shared.Api.Infrastructure;
 
 namespace Chat.Api.Endpoints.SharedChats.CreateSharedChat;
 
-internal sealed record Request(Guid ChatId, Guid CurrentMessageId);
+internal sealed record Request(
+    Guid ChatId,
+    Guid CurrentMessageId,
+    bool AllowRemix = false
+);
 
 internal sealed class Endpoint(ISender sender, SharedLinkUrlBuilder urlBuilder) : Endpoint<Request>
 {
@@ -46,7 +50,8 @@ internal sealed class Endpoint(ISender sender, SharedLinkUrlBuilder urlBuilder) 
         CreateSharedChatCommand command = new
         (
             ChatId: request.ChatId,
-            CurrentMessageId: request.CurrentMessageId
+            CurrentMessageId: request.CurrentMessageId,
+            AllowRemix: request.AllowRemix
         );
 
         ErrorOr<SharedChatResult> result = await sender.Send(command, ct);

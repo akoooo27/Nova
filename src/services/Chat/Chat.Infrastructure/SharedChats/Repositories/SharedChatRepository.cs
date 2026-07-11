@@ -44,16 +44,24 @@ internal sealed class SharedChatRepository(ChatDbContext db) : ISharedChatReposi
             );
     }
 
+    public async Task<SharedChat?> GetForRemixAsync(SharedChatId id, CancellationToken cancellationToken = default)
+    {
+        return await db.SharedChats
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
     public async Task<bool> TryAddAsync(SharedChat sharedChat, CancellationToken cancellationToken = default)
     {
         int affected = await db.Database.ExecuteSqlAsync
         (
             $"""
              insert into shared_chats
-                 (id, user_id, chat_id, current_message_id, title, created_at)
+                 (id, user_id, chat_id, current_message_id, title, created_at, allow_remix)
              values
                  ({sharedChat.Id.Value}, {sharedChat.UserId.Value}, {sharedChat.ChatId.Value},
-                  {sharedChat.CurrentMessageId.Value}, {sharedChat.Title.Value}, {sharedChat.CreatedAt})
+                  {sharedChat.CurrentMessageId.Value}, {sharedChat.Title.Value}, {sharedChat.CreatedAt},
+                  {sharedChat.AllowRemix})
              on conflict (chat_id, current_message_id) do nothing;
              """,
             cancellationToken
