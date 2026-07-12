@@ -179,4 +179,18 @@ public static class ChatErrors
             code: "Chat.InvalidRemixPath",
             description: $"The persisted ancestry for remix source message '{messageId.Value}' is invalid."
         );
+
+    public static Error CannotRegenerateAgentRun(ChatMessageId messageId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotRegenerateAgentRun",
+            description: $"Message '{messageId.Value}' is an agent run card and cannot be regenerated."
+        );
+
+    public static Error CannotStartAgentRunInTemporaryChat(ChatId chatId) =>
+        Error.Conflict
+        (
+            code: "Chat.CannotStartAgentRunInTemporaryChat",
+            description: $"Temporary chat '{chatId.Value}' cannot run agents."
+        );
 }

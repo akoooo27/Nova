@@ -15,6 +15,8 @@ public sealed class ChatMessage : Entity<ChatMessageId>
 
     public MessageRole Role { get; private set; }
 
+    public MessageKind Kind { get; private set; }
+
     public MessageContent? Content { get; private set; }
 
     public LlmModelId? LlmModelId { get; private set; }
@@ -40,6 +42,7 @@ public sealed class ChatMessage : Entity<ChatMessageId>
         ChatId chatId,
         ChatMessageId? parentMessageId,
         MessageRole role,
+        MessageKind kind,
         MessageContent? content,
         LlmModelId? llmModelId,
         MessageStatus status,
@@ -51,6 +54,7 @@ public sealed class ChatMessage : Entity<ChatMessageId>
         ChatId = chatId;
         ParentMessageId = parentMessageId;
         Role = role;
+        Kind = kind;
         Content = content;
         LlmModelId = llmModelId;
         Status = status;
@@ -72,6 +76,7 @@ public sealed class ChatMessage : Entity<ChatMessageId>
         chatId: chatId,
         parentMessageId: parentMessageId,
         role: MessageRole.User,
+        kind: MessageKind.Text,
         content: content,
         llmModelId: null,
         status: MessageStatus.Completed,
@@ -86,13 +91,15 @@ public sealed class ChatMessage : Entity<ChatMessageId>
         ChatMessageId parentMessageId,
         LlmModelId llmModelId,
         DateTimeOffset createdAt,
-        SiblingIndex siblingIndex
+        SiblingIndex siblingIndex,
+        MessageKind kind = MessageKind.Text
     ) => new
     (
         id: ChatMessageId.New(),
         chatId: chatId,
         parentMessageId: parentMessageId,
         role: MessageRole.Assistant,
+        kind: kind,
         content: null,
         llmModelId: llmModelId,
         status: MessageStatus.Generating,
@@ -142,6 +149,7 @@ public sealed class ChatMessage : Entity<ChatMessageId>
             chatId: chatId,
             parentMessageId: parentMessageId,
             role: Role,
+            kind: Kind,
             content: Content,
             llmModelId: LlmModelId,
             status: Status,
