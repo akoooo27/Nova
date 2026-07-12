@@ -21,6 +21,7 @@
 3. **SSE ships here.** The never-implemented stream endpoint lands as an early task at `GET /v1/chats/{chatId}/turns/{turnId}/stream` — the exact path every `TurnStartedResponse.StreamPath` already advertises. It serves normal chat turns and agent runs alike.
 4. **The report travels as a single final `TokenEvent`.** The runner emits activity/usage events during the run and one `TokenEvent` carrying the whole markdown report at the end. The orchestrator reuses the accumulate-text → `CompleteAssistantMessage` mechanic (including the empty-response guard) verbatim from `ChatTurnOrchestrator`, and SSE clients receive the report without a refetch.
 5. **Carried over from rabat unchanged:** hard stop (no report, activities remain); no incremental report token streaming; dedicated start endpoints rather than a mode flag on SendMessage; ids-only job messages; dedicated low-concurrency queue.
+6. **Temporary chats never support agent runs.** This is a product rule, not deferred work: the create variant accepts no `IsTemporary` flag, and starting a run in an existing temporary chat is rejected by a domain guard (below).
 
 ## 2. Binding Architecture Rules (carried over — check every task against these)
 
@@ -47,7 +48,7 @@
 **Out of scope (PR #3+ or deferred)**
 
 - Checkpoint persistence, resume-on-redelivery, checkpoint purge job (PR #3 — own design pass).
-- Stop-and-synthesize, clarifying questions, report token streaming, regenerating agent cards, per-executor models, scheduled runs, memory, analytics decorator for runs, per-kind queues, `IsTemporary` research chats, activity logs on shared chats, MassTransit upgrade (stays 8.4.1).
+- Stop-and-synthesize, clarifying questions, report token streaming, regenerating agent cards, per-executor models, scheduled runs, memory, analytics decorator for runs, per-kind queues, activity logs on shared chats, MassTransit upgrade (stays 8.4.1). (Temporary-chat support is not deferred — it is permanently excluded by decision 6.)
 
 ## 4. Domain: MessageKind
 
@@ -62,6 +63,7 @@ public enum MessageKind
 - New `kind` column on `chat_messages` (stored as string, matching existing enum conventions); migration backfills existing rows to `Text`.
 - `BeginAssistantMessage` gains `MessageKind kind = MessageKind.Text` — no existing call-site changes. The user message carrying the research task stays `Text`.
 - `RegenerateAssistant` on a message of kind `AgentRun` returns `Chat.CannotRegenerateAgentRun` (one guard covers every current and future agent kind).
+- `BeginAssistantMessage` with `kind == MessageKind.AgentRun` on a thread where `IsTemporary` is true returns `Chat.CannotStartAgentRunInTemporaryChat` (decision 6; naming follows `CannotBranchTemporaryChat`/`CannotShareTemporaryChat`). Guarding in the domain covers both start commands and any future call site.
 - Branch and remix deep copies preserve `Kind` (honest provenance). Copies get no `AgentRun` row; the read model returns a null summary and the client renders the report as plain content.
 - Editing the task user message is unaffected — the edit spawns a sibling branch whose new turn is a normal text turn.
 
@@ -155,7 +157,7 @@ public sealed record WorkflowCheckpoint(string CheckpointId, JsonElement State);
 `CreateResearchChatCommand(string Task, Guid LlmModelId, Guid? ProjectId = null)` and `StartResearchCommand(Guid ChatId, string Task, Guid LlmModelId)`, both returning `ErrorOr<TurnStartedResult>` (existing shape). One transaction each:
 
 1. Validate VOs; `ModelUsability.EnsureUsableAsync`; for create, mirror `CreateChatHandler`'s title derivation and project handling (no `IsTemporary`, no `TurnGenerationOptions`).
-2. Create thread with the task as first user message / `AddUserMessage(task)` (existing `ParentStillGenerating` guard naturally locks the branch).
+2. Create thread with the task as first user message / `AddUserMessage(task)` (existing `ParentStillGenerating` guard naturally locks the branch). For the existing-chat variant, the temporary-chat domain guard (§4) surfaces as a 409.
 3. `BeginAssistantMessage(..., kind: MessageKind.AgentRun)`.
 4. `AgentRun.Start(AgentRunKind.Research, chatId, assistantMessageId, userId, AgentTask.Create(task), llmModelId, now)` + `IAgentRunRepository.Add`.
 5. Publish `AgentRunRequested` before `SaveChangesAsync`.
@@ -218,7 +220,7 @@ public sealed record WorkflowCheckpoint(string CheckpointId, JsonElement State);
 
 Project rule: **domain and application unit tests only** — no infrastructure, repository, or endpoint tests. Coverage:
 
-- Domain: `MessageKind` defaults on create/reply/begin; `kind` parameter respected; regenerate guard; branch/remix copies preserve kind.
+- Domain: `MessageKind` defaults on create/reply/begin; `kind` parameter respected; regenerate guard; temporary-chat agent-run guard; branch/remix copies preserve kind.
 - Serializer: `agent_activity` round-trip with a stable discriminator alongside the existing vocabulary.
 - Application: `AgentRunContextBuilder` (history walk, model resolution errors); `AgentRunOrchestrator` — happy path (activities appended and saved as events flow, report completed, `DoneEvent` last), stale-sequence skip, stop path (terminal `Stopped`, null content), agent-failure path, max-duration failure, idempotent-redelivery no-op, missing-run failure; both start commands (thread + `AgentRun` + outboxed job in one save, model/thread guards).
 
