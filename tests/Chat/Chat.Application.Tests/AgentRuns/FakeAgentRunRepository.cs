@@ -10,6 +10,11 @@ internal sealed class FakeAgentRunRepository : IAgentRunRepository
 
     public IReadOnlyList<AgentRun> Runs => _runs;
 
+    public void Seed(AgentRun run)
+    {
+        _runs.Add(run);
+    }
+
     public void Add(AgentRun run)
     {
         _runs.Add(run);

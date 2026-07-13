@@ -8,7 +8,7 @@ namespace Chat.Application.Abstractions.AgentRuns;
 
 public interface IAgentRunContextBuilder
 {
-    Task<ErrorOr<AgentRunContext>> BuildContextAsync
+    Task<ErrorOr<AgentRunContext>> BuildAsync
     (
         ChatThread thread,
         ChatMessage assistantMessage,

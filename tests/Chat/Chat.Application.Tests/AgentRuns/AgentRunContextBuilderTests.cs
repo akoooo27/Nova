@@ -85,7 +85,7 @@ public sealed class AgentRunContextBuilderTests
         AgentRunContextBuilder builder = new(_providers);
 
         ErrorOr<AgentRunContext> context =
-            await builder.BuildContextAsync(thread, assistant, run, CancellationToken.None);
+            await builder.BuildAsync(thread, assistant, run, CancellationToken.None);
 
         Assert.False(context.IsError);
         Assert.Equal(assistant.Id.Value, context.Value.TurnId);
@@ -115,7 +115,7 @@ public sealed class AgentRunContextBuilderTests
         AgentRunContextBuilder builder = new(new FakeLlmProviderRepository());
 
         ErrorOr<AgentRunContext> context =
-            await builder.BuildContextAsync(thread, assistant, run, CancellationToken.None);
+            await builder.BuildAsync(thread, assistant, run, CancellationToken.None);
 
         Assert.True(context.IsError);
         Assert.Equal("AgentRun.ModelNotFound", context.FirstError.Code);

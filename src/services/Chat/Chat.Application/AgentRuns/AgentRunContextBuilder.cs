@@ -14,7 +14,7 @@ namespace Chat.Application.AgentRuns;
 
 internal sealed class AgentRunContextBuilder(ILlmProviderRepository providers) : IAgentRunContextBuilder
 {
-    public async Task<ErrorOr<AgentRunContext>> BuildContextAsync
+    public async Task<ErrorOr<AgentRunContext>> BuildAsync
     (
         ChatThread thread,
         ChatMessage assistantMessage,
@@ -22,11 +22,6 @@ internal sealed class AgentRunContextBuilder(ILlmProviderRepository providers) :
         CancellationToken cancellationToken
     )
     {
-        if (assistantMessage.LlmModelId is null)
-        {
-            return AgentRunOperationErrors.ModelNotConfigured(assistantMessage.Id);
-        }
-
         LlmProvider? provider = await providers.GetByModelIdAsync(run.LlmModelId, cancellationToken);
         LlmModel? model = provider?.FindModel(run.LlmModelId);
 

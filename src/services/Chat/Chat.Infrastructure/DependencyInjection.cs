@@ -2,6 +2,7 @@ using Amazon.S3;
 
 using ArcadeDotnet;
 
+using Chat.Application.Abstractions.AgentRuns;
 using Chat.Application.Abstractions.Analytics;
 using Chat.Application.Abstractions.Arcade;
 using Chat.Application.Abstractions.Arcade.Google;
@@ -12,6 +13,7 @@ using Chat.Application.Abstractions.ProviderLogos;
 using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebRead;
 using Chat.Application.Abstractions.WebSearch;
+using Chat.Application.AgentRuns;
 using Chat.Application.Chats.Cleanup;
 using Chat.Application.Chats.Queries.GetChat;
 using Chat.Application.Chats.Queries.GetChats;
@@ -33,6 +35,8 @@ using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.Personalizations;
 using Chat.Domain.Projects;
 using Chat.Domain.SharedChats;
+using Chat.Infrastructure.AgentRuns;
+using Chat.Infrastructure.AgentRuns.Consumers;
 using Chat.Infrastructure.AgentRuns.Repositories;
 using Chat.Infrastructure.Agents;
 using Chat.Infrastructure.Analytics;
@@ -109,6 +113,7 @@ public static class DependencyInjection
             .AddDatabaseServices()
             .AddTurnStopSignal()
             .AddTurnPipeline(configuration)
+            .AddAgentRunPipeline()
             .AddTurnWorkerMessaging(configuration);
 
     public static IServiceCollection AddCleanupWorkerInfrastructure(this IServiceCollection services) =>
@@ -373,6 +378,16 @@ public static class DependencyInjection
         return services;
     }
 
+    private static IServiceCollection AddAgentRunPipeline(this IServiceCollection services)
+    {
+        services.AddScoped<AgentRunOrchestrator>();
+        services.AddScoped<IAgentRunnerResolver, AgentRunnerResolver>();
+
+        services.AddSingleton<IWorkflowCheckpointStore, NoOpWorkflowCheckpointStore>();
+
+        return services;
+    }
+
     private static void AddAnalytics(IServiceCollection services, IConfiguration configuration)
     {
         services
@@ -409,6 +424,7 @@ public static class DependencyInjection
             configurator.SetKebabCaseEndpointNameFormatter();
 
             configurator.AddConsumer<TurnRequestedConsumer, TurnRequestedConsumerDefinition>();
+            configurator.AddConsumer<AgentRunRequestedConsumer, AgentRunRequestedConsumerDefinition>();
 
             configurator.AddEntityFrameworkOutbox<ChatDbContext>(outbox =>
             {

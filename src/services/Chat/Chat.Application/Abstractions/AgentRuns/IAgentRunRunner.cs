@@ -13,7 +13,7 @@ public interface IAgentRunRunner
     IAsyncEnumerable<TurnEvent> RunAsync
     (
         AgentRunContext context,
-        IWorkflowCheckpointStore checkpointStore,
+        WorkflowCheckpoint? checkpoint,
         CancellationToken cancellationToken
     );
 }

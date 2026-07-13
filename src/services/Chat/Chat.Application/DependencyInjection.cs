@@ -1,3 +1,6 @@
+using Chat.Application.Abstractions.AgentRuns;
+using Chat.Application.AgentRuns;
+
 using FluentValidation;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +30,8 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
+
+        services.AddScoped<IAgentRunContextBuilder, AgentRunContextBuilder>();
 
         return services;
     }
