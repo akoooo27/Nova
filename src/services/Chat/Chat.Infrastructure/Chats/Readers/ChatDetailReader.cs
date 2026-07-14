@@ -31,6 +31,7 @@ internal sealed class ChatDetailReader(NpgsqlDataSource dataSource) : IChatDetai
                                       m.sibling_index    as "SiblingIndex",
                                       m.created_at       as "CreatedAt",
                                       m.completed_at     as "CompletedAt",
+                                      m.kind             as "Kind",
                                       m.llm_model_id     as "ModelId",
                                       lm.external_model_id as "ModelSlug",
                                       lm.name            as "ModelName"
@@ -38,6 +39,28 @@ internal sealed class ChatDetailReader(NpgsqlDataSource dataSource) : IChatDetai
                                left join llm_models lm on lm.id = m.llm_model_id
                                where m.chat_id = @ChatId
                                order by m.created_at, m.id;
+
+                               select r.assistant_message_id as "AssistantMessageId",
+                                      r.kind                 as "Kind",
+                                      r.started_at           as "StartedAt",
+                                      r.finished_at          as "FinishedAt",
+                                      (
+                                          select a.title
+                                          from agent_run_activities a
+                                          where a.run_id = r.id and a.kind = 'Phase'
+                                          order by a.sequence desc
+                                          limit 1
+                                      )                      as "CurrentPhase"
+                               from agent_runs r
+                               where r.chat_id = @ChatId;
+
+                               select r.assistant_message_id as "AssistantMessageId",
+                                      a.type                 as "Type",
+                                      count(*)::int          as "Count"
+                               from agent_run_activities a
+                               join agent_runs r on r.id = a.run_id
+                               where r.chat_id = @ChatId
+                               group by r.assistant_message_id, a.type;
                                """;
 
     public async Task<ChatDetailReadModel?> GetAsync
@@ -66,6 +89,31 @@ internal sealed class ChatDetailReader(NpgsqlDataSource dataSource) : IChatDetai
         }
 
         MessageRow[] rows = (await grid.ReadAsync<MessageRow>()).ToArray();
+        RunSummaryRow[] runRows = (await grid.ReadAsync<RunSummaryRow>()).ToArray();
+        ActivityCountRow[] countRows = (await grid.ReadAsync<ActivityCountRow>()).ToArray();
+
+        Dictionary<Guid, Dictionary<string, int>> countsByMessage = countRows
+            .GroupBy(row => row.AssistantMessageId)
+            .ToDictionary
+            (
+                group => group.Key,
+                group => group.ToDictionary(row => row.Type, row => row.Count)
+            );
+
+        Dictionary<Guid, AgentRunSummaryReadModel> summariesByMessage = runRows.ToDictionary
+        (
+            row => row.AssistantMessageId,
+            row => new AgentRunSummaryReadModel
+            (
+                Kind: row.Kind,
+                CurrentPhase: row.CurrentPhase,
+                ActivityCounts: countsByMessage.TryGetValue(row.AssistantMessageId, out Dictionary<string, int>? counts)
+                    ? counts
+                    : new Dictionary<string, int>(),
+                StartedAt: row.StartedAt,
+                FinishedAt: row.FinishedAt
+            )
+        );
 
         ChatMessageReadModel[] messages = rows
             .Select(row => new ChatMessageReadModel
@@ -81,7 +129,11 @@ internal sealed class ChatDetailReader(NpgsqlDataSource dataSource) : IChatDetai
                 CompletedAt: row.CompletedAt,
                 Model: row.ModelId is null
                     ? null
-                    : new ChatMessageModelReadModel(row.ModelId.Value, row.ModelSlug, row.ModelName)
+                    : new ChatMessageModelReadModel(row.ModelId.Value, row.ModelSlug, row.ModelName),
+                Kind: Enum.Parse<MessageKind>(row.Kind),
+                AgentRun: summariesByMessage.TryGetValue(row.Id, out AgentRunSummaryReadModel? summary)
+                    ? summary
+                    : null
             ))
             .ToArray();
 
@@ -123,8 +175,20 @@ internal sealed class ChatDetailReader(NpgsqlDataSource dataSource) : IChatDetai
         int SiblingIndex,
         DateTime CreatedAt,
         DateTime? CompletedAt,
+        string Kind,
         Guid? ModelId,
         string? ModelSlug,
         string? ModelName
     );
+
+    private sealed record RunSummaryRow
+    (
+        Guid AssistantMessageId,
+        string Kind,
+        DateTime StartedAt,
+        DateTime? FinishedAt,
+        string? CurrentPhase
+    );
+
+    private sealed record ActivityCountRow(Guid AssistantMessageId, string Type, int Count);
 }

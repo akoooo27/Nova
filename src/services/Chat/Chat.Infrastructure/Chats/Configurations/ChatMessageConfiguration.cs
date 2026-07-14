@@ -49,6 +49,11 @@ internal sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMe
             .HasConversion<string>()
             .IsRequired();
 
+        builder.Property(x => x.Kind)
+            .HasConversion<string>()
+            .HasDefaultValue(MessageKind.Text)
+            .IsRequired();
+
         builder.Property(x => x.Status)
             .HasConversion<string>()
             .IsRequired();

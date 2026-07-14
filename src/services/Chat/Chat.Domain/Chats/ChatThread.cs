@@ -361,9 +361,15 @@ public sealed class ChatThread : AggregateRoot<ChatId>
     (
         ChatMessageId parentMessageId,
         LlmModelId llmModelId,
-        DateTimeOffset createdAt
+        DateTimeOffset createdAt,
+        MessageKind kind = MessageKind.Text
     )
     {
+        if (kind == MessageKind.AgentRun && IsTemporary)
+        {
+            return ChatErrors.CannotStartAgentRunInTemporaryChat(Id);
+        }
+
         ChatMessage? parent = FindMessage(parentMessageId);
 
         if (parent is null)
@@ -382,7 +388,8 @@ public sealed class ChatThread : AggregateRoot<ChatId>
             parentMessageId: parentMessageId,
             llmModelId: llmModelId,
             createdAt: createdAt,
-            siblingIndex: GetNextSiblingIndex(parentMessageId)
+            siblingIndex: GetNextSiblingIndex(parentMessageId),
+            kind: kind
         );
 
         _messages.Add(message);
@@ -553,6 +560,11 @@ public sealed class ChatThread : AggregateRoot<ChatId>
         if (target.Status == MessageStatus.Generating)
         {
             return ChatErrors.CannotRegenerateWhileGenerating(messageId);
+        }
+
+        if (target.Kind == MessageKind.AgentRun)
+        {
+            return ChatErrors.CannotRegenerateAgentRun(messageId);
         }
 
         ChatMessage sibling = ChatMessage.CreateAssistantMessage

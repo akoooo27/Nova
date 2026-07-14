@@ -10,5 +10,6 @@ public sealed record PublicSharedChatMessageReadModel
     string? Content,
     MessageStatus Status,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? CompletedAt
+    DateTimeOffset? CompletedAt,
+    string Kind
 );

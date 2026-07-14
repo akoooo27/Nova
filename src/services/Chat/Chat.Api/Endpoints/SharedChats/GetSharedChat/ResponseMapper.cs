@@ -36,6 +36,7 @@ internal static class ResponseMapper
             Role = message.Role.ToString().ToLowerInvariant(),
             Content = message.Content,
             Status = message.Status.ToString().ToLowerInvariant(),
+            Kind = message.Kind.ToLowerInvariant(),
             CreatedAt = message.CreatedAt,
             CompletedAt = message.CompletedAt
         }

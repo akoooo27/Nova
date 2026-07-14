@@ -2,6 +2,7 @@ using Amazon.S3;
 
 using ArcadeDotnet;
 
+using Chat.Application.Abstractions.AgentRuns;
 using Chat.Application.Abstractions.Analytics;
 using Chat.Application.Abstractions.Arcade;
 using Chat.Application.Abstractions.Arcade.Google;
@@ -12,6 +13,8 @@ using Chat.Application.Abstractions.ProviderLogos;
 using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebRead;
 using Chat.Application.Abstractions.WebSearch;
+using Chat.Application.AgentRuns;
+using Chat.Application.AgentRuns.Queries.GetAgentRun;
 using Chat.Application.Chats.Cleanup;
 using Chat.Application.Chats.Queries.GetChat;
 using Chat.Application.Chats.Queries.GetChats;
@@ -26,6 +29,7 @@ using Chat.Application.Turns;
 using Chat.Application.Turns.Tools;
 using Chat.Application.Turns.Tools.Gmail;
 using Chat.Domain.AgentRuns;
+using Chat.Domain.AgentRuns.ValueObjects;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
@@ -33,8 +37,12 @@ using Chat.Domain.ModelCatalog.Events;
 using Chat.Domain.Personalizations;
 using Chat.Domain.Projects;
 using Chat.Domain.SharedChats;
+using Chat.Infrastructure.AgentRuns;
+using Chat.Infrastructure.AgentRuns.Consumers;
+using Chat.Infrastructure.AgentRuns.Readers;
 using Chat.Infrastructure.AgentRuns.Repositories;
 using Chat.Infrastructure.Agents;
+using Chat.Infrastructure.Agents.Research;
 using Chat.Infrastructure.Analytics;
 using Chat.Infrastructure.Arcade;
 using Chat.Infrastructure.Chats.Readers;
@@ -109,6 +117,7 @@ public static class DependencyInjection
             .AddDatabaseServices()
             .AddTurnStopSignal()
             .AddTurnPipeline(configuration)
+            .AddAgentRunPipeline(configuration)
             .AddTurnWorkerMessaging(configuration);
 
     public static IServiceCollection AddCleanupWorkerInfrastructure(this IServiceCollection services) =>
@@ -190,6 +199,8 @@ public static class DependencyInjection
         services.AddScoped<IChatListReader, ChatListReader>();
         services.AddScoped<IChatDetailReader, ChatDetailReader>();
         services.AddScoped<IChatSearchReader, ChatSearchReader>();
+
+        services.AddScoped<IAgentRunDetailReader, AgentRunDetailReader>();
 
         services.AddScoped<ISharedChatListReader, SharedChatListReader>();
         services.AddScoped<IPublicSharedChatReader, PublicSharedChatReader>();
@@ -373,6 +384,25 @@ public static class DependencyInjection
         return services;
     }
 
+    private static IServiceCollection AddAgentRunPipeline(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<AgentRunOrchestrator>();
+        services.AddScoped<IAgentRunnerResolver, AgentRunnerResolver>();
+
+        services.AddSingleton<IWorkflowCheckpointStore, NoOpWorkflowCheckpointStore>();
+
+        services
+            .AddOptions<ResearchOptions>()
+            .Bind(configuration.GetSection(ResearchOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // A new agent kind = its own runner + one keyed registration here. Nothing else changes.
+        services.AddKeyedScoped<IAgentRunRunner, ResearchWorkflowRunner>(AgentRunKind.Research);
+
+        return services;
+    }
+
     private static void AddAnalytics(IServiceCollection services, IConfiguration configuration)
     {
         services
@@ -409,6 +439,7 @@ public static class DependencyInjection
             configurator.SetKebabCaseEndpointNameFormatter();
 
             configurator.AddConsumer<TurnRequestedConsumer, TurnRequestedConsumerDefinition>();
+            configurator.AddConsumer<AgentRunRequestedConsumer, AgentRunRequestedConsumerDefinition>();
 
             configurator.AddEntityFrameworkOutbox<ChatDbContext>(outbox =>
             {

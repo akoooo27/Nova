@@ -267,6 +267,13 @@ namespace Chat.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(1024)")
                         .HasColumnName("failure_reason");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Text")
+                        .HasColumnName("kind");
+
                     b.Property<Guid?>("LlmModelId")
                         .HasColumnType("uuid")
                         .HasColumnName("llm_model_id");

@@ -13,5 +13,7 @@ public sealed record ChatMessageReadModel
     int SiblingIndex,
     DateTimeOffset CreatedAt,
     DateTimeOffset? CompletedAt,
-    ChatMessageModelReadModel? Model
+    ChatMessageModelReadModel? Model,
+    MessageKind Kind,
+    AgentRunSummaryReadModel? AgentRun
 );

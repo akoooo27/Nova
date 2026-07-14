@@ -15,6 +15,7 @@ namespace Chat.Application.Turns;
 [JsonDerivedType(typeof(FailedEvent), "failed")]
 [JsonDerivedType(typeof(ReasoningEvent), "reasoning")]
 [JsonDerivedType(typeof(StoppedEvent), "stopped")]
+[JsonDerivedType(typeof(AgentActivityEvent), "agent_activity")]
 public abstract record TurnEvent(Guid TurnId);
 
 public sealed record TokenEvent(Guid TurnId, string Text) : TurnEvent(TurnId);
@@ -45,3 +46,15 @@ public sealed record FailedEvent(Guid TurnId, string Reason) : TurnEvent(TurnId)
 public sealed record ReasoningEvent(Guid TurnId, string Text) : TurnEvent(TurnId);
 
 public sealed record StoppedEvent(Guid TurnId) : TurnEvent(TurnId);
+
+public sealed record AgentActivityEvent
+(
+    Guid TurnId,
+    int Sequence,
+    string Kind,
+    // Wire name is "activityType": the polymorphic discriminator already owns "type"
+    // (the default JSON name of this property), and reusing it makes System.Text.Json throw.
+    [property: JsonPropertyName("activityType")] string Type,
+    string Title,
+    string? DetailJson
+) : TurnEvent(TurnId);
