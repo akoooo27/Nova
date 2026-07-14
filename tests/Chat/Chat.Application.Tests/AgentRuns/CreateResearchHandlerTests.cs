@@ -1,5 +1,5 @@
 using Chat.Application.AgentRuns;
-using Chat.Application.AgentRuns.Commands.CreateResearchChat;
+using Chat.Application.Chats.Commands.CreateResearchChat;
 using Chat.Application.Chats.Results;
 using Chat.Application.Tests.FavoriteModels;
 using Chat.Application.Tests.ModelCatalog;

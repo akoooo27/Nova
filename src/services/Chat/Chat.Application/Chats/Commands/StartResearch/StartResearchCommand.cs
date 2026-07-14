@@ -4,7 +4,7 @@ using ErrorOr;
 
 using Mediator;
 
-namespace Chat.Application.AgentRuns.Commands.StartResearch;
+namespace Chat.Application.Chats.Commands.StartResearch;
 
 public sealed record StartResearchCommand
 (

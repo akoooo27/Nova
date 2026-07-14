@@ -1,4 +1,5 @@
 using Chat.Application.Abstractions.Database;
+using Chat.Application.AgentRuns;
 using Chat.Application.Chats;
 using Chat.Application.Chats.Results;
 using Chat.Domain.AgentRuns;
@@ -20,7 +21,7 @@ using Shared.Application.Messaging;
 
 using SharedKernel;
 
-namespace Chat.Application.AgentRuns.Commands.CreateResearchChat;
+namespace Chat.Application.Chats.Commands.CreateResearchChat;
 
 internal sealed class CreateResearchHandler(
     IUserContext userContext,

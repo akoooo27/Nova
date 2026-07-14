@@ -4,7 +4,7 @@ using Chat.Domain.AgentRuns.ValueObjects;
 
 using FluentValidation;
 
-namespace Chat.Application.AgentRuns.Commands.StartResearch;
+namespace Chat.Application.Chats.Commands.StartResearch;
 
 internal sealed class StartResearchCommandValidator : AbstractValidator<StartResearchCommand>
 {
