@@ -14,6 +14,7 @@ using Chat.Application.Abstractions.Turns;
 using Chat.Application.Abstractions.WebRead;
 using Chat.Application.Abstractions.WebSearch;
 using Chat.Application.AgentRuns;
+using Chat.Application.AgentRuns.Queries.GetAgentRun;
 using Chat.Application.Chats.Cleanup;
 using Chat.Application.Chats.Queries.GetChat;
 using Chat.Application.Chats.Queries.GetChats;
@@ -38,6 +39,7 @@ using Chat.Domain.Projects;
 using Chat.Domain.SharedChats;
 using Chat.Infrastructure.AgentRuns;
 using Chat.Infrastructure.AgentRuns.Consumers;
+using Chat.Infrastructure.AgentRuns.Readers;
 using Chat.Infrastructure.AgentRuns.Repositories;
 using Chat.Infrastructure.Agents;
 using Chat.Infrastructure.Agents.Research;
@@ -197,6 +199,8 @@ public static class DependencyInjection
         services.AddScoped<IChatListReader, ChatListReader>();
         services.AddScoped<IChatDetailReader, ChatDetailReader>();
         services.AddScoped<IChatSearchReader, ChatSearchReader>();
+
+        services.AddScoped<IAgentRunDetailReader, AgentRunDetailReader>();
 
         services.AddScoped<ISharedChatListReader, SharedChatListReader>();
         services.AddScoped<IPublicSharedChatReader, PublicSharedChatReader>();
