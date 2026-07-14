@@ -53,6 +53,17 @@ internal static class ResponseMapper
                 Name = message.Model.Name
             },
         CreatedAt = message.CreatedAt,
-        CompletedAt = message.CompletedAt
+        CompletedAt = message.CompletedAt,
+        Kind = message.Kind.ToString().ToLowerInvariant(),
+        AgentRun = message.AgentRun is null
+            ? null
+            : new AgentRunSummaryResponse
+            {
+                Kind = message.AgentRun.Kind.ToLowerInvariant(),
+                CurrentPhase = message.AgentRun.CurrentPhase,
+                ActivityCounts = message.AgentRun.ActivityCounts,
+                StartedAt = message.AgentRun.StartedAt,
+                FinishedAt = message.AgentRun.FinishedAt
+            }
     };
 }

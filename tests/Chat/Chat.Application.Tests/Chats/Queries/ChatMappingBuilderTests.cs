@@ -80,6 +80,8 @@ public sealed class ChatMappingBuilderTests
         SiblingIndex: sibling,
         CreatedAt: createdAt ?? DateTimeOffset.UtcNow,
         CompletedAt: null,
-        Model: null
+        Model: null,
+        Kind: MessageKind.Text,
+        AgentRun: null
     );
 }

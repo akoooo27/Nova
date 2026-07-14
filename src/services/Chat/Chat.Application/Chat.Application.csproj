@@ -20,4 +20,8 @@
     <ProjectReference Include="..\Chat.Domain\Chat.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="AgentRuns\Queries\" />
+  </ItemGroup>
+
 </Project>

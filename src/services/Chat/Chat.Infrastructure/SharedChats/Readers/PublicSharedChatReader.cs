@@ -29,6 +29,7 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
                                        message.role,
                                        message.content,
                                        message.status,
+                                       message.kind,
                                        message.created_at,
                                        message.completed_at,
                                        0 as depth,
@@ -48,6 +49,7 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
                                        parent.role,
                                        parent.content,
                                        parent.status,
+                                       parent.kind,
                                        parent.created_at,
                                        parent.completed_at,
                                        child.depth + 1,
@@ -64,6 +66,7 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
                                    role              as "Role",
                                    content           as "Content",
                                    status            as "Status",
+                                   kind              as "Kind",
                                    created_at        as "CreatedAt",
                                    completed_at      as "CompletedAt"
                                from path
@@ -104,7 +107,8 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
                 Content: row.Content,
                 Status: Enum.Parse<MessageStatus>(row.Status),
                 CreatedAt: row.CreatedAt,
-                CompletedAt: row.CompletedAt
+                CompletedAt: row.CompletedAt,
+                Kind: row.Kind
             ))
             .ToArray();
 
@@ -162,6 +166,7 @@ internal sealed class PublicSharedChatReader(NpgsqlDataSource dataSource) : IPub
         string Role,
         string? Content,
         string Status,
+        string Kind,
         DateTime CreatedAt,
         DateTime? CompletedAt
     );
