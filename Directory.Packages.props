@@ -66,6 +66,8 @@
     
     <PackageVersion Include="Microsoft.Agents.AI" Version="1.13.0" />
     <PackageVersion Include="Microsoft.Agents.AI.OpenAI" Version="1.13.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.13.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows.Generators" Version="1.13.0" />
     
     <PackageVersion Include="PostHog.AspNetCore" Version="2.8.0" />
     

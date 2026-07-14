@@ -28,6 +28,7 @@ using Chat.Application.Turns;
 using Chat.Application.Turns.Tools;
 using Chat.Application.Turns.Tools.Gmail;
 using Chat.Domain.AgentRuns;
+using Chat.Domain.AgentRuns.ValueObjects;
 using Chat.Domain.Chats;
 using Chat.Domain.FavoriteModels;
 using Chat.Domain.ModelCatalog;
@@ -39,6 +40,7 @@ using Chat.Infrastructure.AgentRuns;
 using Chat.Infrastructure.AgentRuns.Consumers;
 using Chat.Infrastructure.AgentRuns.Repositories;
 using Chat.Infrastructure.Agents;
+using Chat.Infrastructure.Agents.Research;
 using Chat.Infrastructure.Analytics;
 using Chat.Infrastructure.Arcade;
 using Chat.Infrastructure.Chats.Readers;
@@ -113,7 +115,7 @@ public static class DependencyInjection
             .AddDatabaseServices()
             .AddTurnStopSignal()
             .AddTurnPipeline(configuration)
-            .AddAgentRunPipeline()
+            .AddAgentRunPipeline(configuration)
             .AddTurnWorkerMessaging(configuration);
 
     public static IServiceCollection AddCleanupWorkerInfrastructure(this IServiceCollection services) =>
@@ -378,12 +380,21 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddAgentRunPipeline(this IServiceCollection services)
+    private static IServiceCollection AddAgentRunPipeline(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<AgentRunOrchestrator>();
         services.AddScoped<IAgentRunnerResolver, AgentRunnerResolver>();
 
         services.AddSingleton<IWorkflowCheckpointStore, NoOpWorkflowCheckpointStore>();
+
+        services
+            .AddOptions<ResearchOptions>()
+            .Bind(configuration.GetSection(ResearchOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // A new agent kind = its own runner + one keyed registration here. Nothing else changes.
+        services.AddKeyedScoped<IAgentRunRunner, ResearchWorkflowRunner>(AgentRunKind.Research);
 
         return services;
     }
