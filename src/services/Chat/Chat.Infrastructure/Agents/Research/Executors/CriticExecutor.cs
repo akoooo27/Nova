@@ -12,6 +12,7 @@ namespace Chat.Infrastructure.Agents.Research.Executors;
 /// Decides one more round or done. "Done" = OpenQuestions comes out empty — the workflow
 /// edges route on that (empty → Writer, non-empty → Search).
 /// </summary>
+[SendsMessage(typeof(ResearchState))]
 internal sealed partial class CriticExecutor(AIAgent agent, ResearchOptions options) : Executor("research-critic")
 {
     [MessageHandler]

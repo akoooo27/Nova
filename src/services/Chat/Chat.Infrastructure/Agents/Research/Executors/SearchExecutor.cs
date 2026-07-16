@@ -8,6 +8,7 @@ using Microsoft.Agents.AI.Workflows;
 
 namespace Chat.Infrastructure.Agents.Research.Executors;
 
+[SendsMessage(typeof(ResearchState))]
 internal sealed partial class SearchExecutor(IWebSearchClient searchClient, ResearchOptions options) : Executor("research-search")
 {
     private const int ResultsPerQuery = 5;
