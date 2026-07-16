@@ -5,6 +5,7 @@ using Microsoft.Agents.AI.Workflows;
 
 namespace Chat.Infrastructure.Agents.Research.Executors;
 
+[YieldsOutput(typeof(string))]
 internal sealed partial class WriterExecutor(AIAgent agent) : Executor("research-writer")
 {
     [MessageHandler]

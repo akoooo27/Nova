@@ -101,6 +101,24 @@ internal sealed class ResearchWorkflowRunner : IAgentRunRunner
                         Text: output.Data?.ToString() ?? string.Empty
                     );
                     break;
+
+                case ExecutorFailedEvent executorFailed:
+                    {
+                        Exception? cause = executorFailed.Data;
+                        throw new WorkflowExecutionException
+                        (
+                            message: cause?.Message ?? "Research executor failed.",
+                            innerException: cause,
+                            executorId: executorFailed.ExecutorId
+                        );
+                    }
+
+                case WorkflowErrorEvent error:
+                    throw new WorkflowExecutionException
+                    (
+                        message: error.Exception?.Message ?? "Research workflow failed.",
+                        innerException: error.Exception
+                    );
             }
         }
     }

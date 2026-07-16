@@ -9,5 +9,5 @@ public sealed class FirecrawlOptions
     [Required]
     public string ApiKey { get; init; } = string.Empty;
 
-    public Uri BaseUrl { get; init; } = new("https://api.firecrawl.dev");
+    public Uri BaseUrl { get; init; } = new("https://api.firecrawl.dev/v1");
 }

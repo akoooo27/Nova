@@ -9,6 +9,7 @@ using Microsoft.Agents.AI.Workflows;
 
 namespace Chat.Infrastructure.Agents.Research.Executors;
 
+[SendsMessage(typeof(ResearchState))]
 internal sealed partial class ReadExecutor(IUrlReader urlReader, AIAgent condenser, ResearchOptions options)
     : Executor("research-read")
 {
@@ -23,6 +24,8 @@ internal sealed partial class ReadExecutor(IUrlReader urlReader, AIAgent condens
         List<string> attempted = [.. state.AttemptedUrls];
         int sourcesRead = state.SourcesRead;
         int readsThisRound = 0;
+        int readFailures = 0;
+        Exception? lastReadError = null;
 
         while (remaining.Count > 0 && readsThisRound < ReadsPerRound && sourcesRead < options.MaxSourcesToRead)
         {
@@ -64,9 +67,12 @@ internal sealed partial class ReadExecutor(IUrlReader urlReader, AIAgent condens
                 page = await urlReader.ReadAsync(uri, cancellationToken);
             }
 #pragma warning disable CA1031 // A single unreadable page must not kill the run.
-            catch (Exception)
+            catch (Exception readError)
 #pragma warning restore CA1031
             {
+                readFailures++;
+                lastReadError = readError;
+
                 await context.AddEventAsync(new ResearchProgressEvent
                     (
                         new ResearchProgress
@@ -124,6 +130,19 @@ internal sealed partial class ReadExecutor(IUrlReader urlReader, AIAgent condens
                     )
                 ),
                 cancellationToken
+            );
+        }
+
+        // Isolated unreadable pages are skipped above. But if this step attempted
+        // reads and still gathered nothing, the failure is systemic (bad config,
+        // auth, or connectivity) rather than a single bad page — fail loudly with
+        // the real cause so the run surfaces an error instead of an empty report.
+        if (sourcesRead == 0 && readFailures > 0)
+        {
+            throw new WorkflowExecutionException
+            (
+                $"All {readFailures} URL read(s) failed; aborting research. Last error: {lastReadError?.Message}",
+                lastReadError
             );
         }
 

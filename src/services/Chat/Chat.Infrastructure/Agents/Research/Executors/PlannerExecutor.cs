@@ -7,6 +7,7 @@ using Microsoft.Agents.AI.Workflows;
 
 namespace Chat.Infrastructure.Agents.Research.Executors;
 
+[SendsMessage(typeof(ResearchState))]
 internal sealed partial class PlannerExecutor(AIAgent agent) : Executor("research-planner")
 {
     [MessageHandler]
